@@ -75,6 +75,26 @@
       font-size: 1.25rem;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+    .floating-button {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      width: 4rem;
+      height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      background-color: #2563eb;
+      color: white;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      transition: background-color 0.2s ease;
+      z-index: 30;
+    }
+    .floating-button:hover {
+      background-color: #1e40af;
+    }
     .header {
       background: linear-gradient(to right, #1e40af, #3b82f6);
       color: white;
@@ -112,6 +132,11 @@
       }
       .header {
         padding: 0.75rem 1rem;
+      }
+      .floating-button {
+        width: 3.5rem;
+        height: 3.5rem;
+        font-size: 1.25rem;
       }
     }
   </style>
@@ -167,6 +192,10 @@
     </div>
   </main>
 
+  <button id="btnSalaEspera" class="floating-button" title="Acessar Sala de Espera">
+    <i class="fas fa-clock"></i>
+  </button>
+
   <script type="module">
     import { database, ref, push } from './firebase-config.js';
 
@@ -181,7 +210,14 @@
       const btnSalvar = document.getElementById('btnSalvar');
       const btnTirarFoto = document.getElementById('btnTirarFoto');
       const btnVerRegistros = document.getElementById('btnVerRegistros');
+      const btnSalaEspera = document.getElementById('btnSalaEspera');
       const spinner = document.getElementById('spinner');
+
+      // Evento para o botão Sala de Espera
+      btnSalaEspera.addEventListener('click', () => {
+        console.log("Botão Sala de Espera clicado");
+        window.open("sala_espera.html", "_blank");
+      });
 
       function camposPreenchidos() {
         const motorista = document.getElementById("motorista").value.trim();
