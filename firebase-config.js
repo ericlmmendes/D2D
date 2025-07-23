@@ -1,5 +1,5 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js';
+import { getDatabase, ref } from 'https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js';
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-// Exportar o objeto database para uso em outros scripts
-export const database = getDatabase(app);
+// Exportar o objeto database e ref para uso em outros scripts
+export { database, ref };
