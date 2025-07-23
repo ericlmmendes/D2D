@@ -1,6 +1,5 @@
-// Importar o Firebase SDK
-import firebase from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -15,8 +14,7 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
 // Exportar o objeto database para uso em outros scripts
-const database = firebase.database();
-export { database };
+export const database = getDatabase(app);
