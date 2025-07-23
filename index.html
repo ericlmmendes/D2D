@@ -42,7 +42,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cadastro de FMO - CDC Barueri</title>
+  <title>Cadastro de D2D - CDC Barueri</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -107,7 +107,7 @@
   <header class="header">
     <div class="max-w-7xl mx-auto flex items-center gap-3">
       <i class="fas fa-camera text-2xl"></i>
-      <h1 class="text-2xl font-semibold">Cadastro de FMO - CDC Barueri</h1>
+      <h1 class="text-2xl font-semibold">Cadastro de D2D - CDC Barueri</h1>
     </div>
   </header>
 
@@ -158,37 +158,6 @@
   <script type="module">
     import { database } from './firebase-config.js';
 
-    var gk_isXlsx = false;
-    var gk_xlsxFileLookup = {};
-    var gk_fileData = {};
-    function filledCell(cell) {
-      return cell !== '' && cell != null;
-    }
-    function loadFileData(filename) {
-      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-        try {
-          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-          var firstSheetName = workbook.SheetNames[0];
-          var worksheet = workbook.Sheets[firstSheetName];
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          var filteredData = jsonData.filter(row => row.some(filledCell));
-          var headerRowIndex = filteredData.findIndex((row, index) =>
-            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-          );
-          if (headerRowIndex === -1 || headerRowIndex > 25) {
-            headerRowIndex = 0;
-          }
-          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-          return csv;
-        } catch (e) {
-          console.error(e);
-          return "";
-        }
-      }
-      return gk_fileData[filename] || "";
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
       const video = document.getElementById('video');
       const canvas = document.getElementById('canvas');
@@ -213,8 +182,14 @@
 
         video.classList.remove('hidden');
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-          .then(stream => { video.srcObject = stream; })
-          .catch(err => alert("Erro ao acessar câmera: " + err));
+          .then(stream => {
+            video.srcObject = stream;
+            video.play();
+          })
+          .catch(err => {
+            console.error("Erro ao acessar câmera:", err);
+            alert("Erro ao acessar câmera: " + err.message);
+          });
 
         setTimeout(tirarFoto, 1000);
       };
@@ -250,20 +225,20 @@
         const telefone = document.getElementById("telefone").value.trim();
         const fmo = document.getElementById("fmo").value.trim();
         const placa = document.getElementById("placa").value.trim();
-        const dataHora = new Date().toLocaleString("pt-BR");
+        const dataHora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
         let latitude = '', longitude = '';
 
-        await new Promise(resolve => {
-          navigator.geolocation.getCurrentPosition(pos => {
-            latitude = pos.coords.latitude.toFixed(6);
-            longitude = pos.coords.longitude.toFixed(6);
-            resolve();
-          }, err => {
-            alert("Localização não permitida.");
-            resolve();
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
           });
-        });
+          latitude = pos.coords.latitude.toFixed(6);
+          longitude = pos.coords.longitude.toFixed(6);
+        } catch (err) {
+          console.warn("Localização não permitida:", err);
+          alert("Localização não permitida. O registro será salvo sem coordenadas.");
+        }
 
         const imagemBase64 = canvas.toDataURL("image/png");
 
@@ -287,7 +262,7 @@
           btnSalvar.classList.add('hidden');
         } catch (error) {
           console.error("Erro ao salvar no Firebase:", error);
-          alert("Erro ao salvar o registro. Tente novamente.");
+          alert("Erro ao salvar o registro: " + error.message);
         }
       });
 
@@ -297,7 +272,7 @@
 
       window.onload = function () {
         const senha = prompt("Digite a senha de administrador para acesso total:");
-        if (senha === "adm123") {
+        if (senha === "Evo@0101") {
           btnVerRegistros.classList.remove("hidden");
         }
       };
