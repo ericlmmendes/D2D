@@ -1,0 +1,250 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sala de Espera - CDC Barueri</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    th {
+      background: #1e40af;
+      color: white;
+      font-weight: 600;
+    }
+    td {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    tbody tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    tbody tr:hover td {
+      background: #f1f5f9;
+      transition: background 0.2s ease;
+    }
+    .header {
+      background: linear-gradient(to right, #1e40af, #3b82f6);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .notification {
+      background: #fefcbf;
+      border-left: 4px solid #d97706;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 0.25rem;
+    }
+    @media (max-width: 640px) {
+      th, td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="header">
+    <div class="max-w-7xl mx-auto flex items-center gap-3">
+      <i class="fas fa-clock text-2xl"></i>
+      <h1 class="text-2xl font-semibold">Sala de Espera - CDC Barueri</h1>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 mt EDUCAÇÃO-6">
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-bell mr-2"></i>Notificações</h2>
+      <div id="notificacoes" class="space-y-2"></div>
+      <h2 class="text-lg font-semibold text-gray-800 mt-6 mb-4"><i class="fas fa-list mr-2"></i>Ordem de Chegada</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead>
+            <tr>
+              <th><i class="fas fa-user fa-xs mr-1"></i> Motorista</th>
+              <th><i class="fas fa-file-alt fa-xs mr-1"></i> FMO</th>
+              <th><i class="fas fa-truck fa-xs mr-1"></i> Placa</th>
+              <th><i class="fas fa-clock fa-xs mr-1"></i> Data e Hora</th>
+              <th><i class="fas fa-info-circle fa-xs mr-1"></i> Status</th>
+              <th><i class="fas fa-warehouse fa-xs mr-1"></i> Doca</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaEspera"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { database, ref, onValue, remove } from './firebase-config.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log("Firebase database:", database);
+      console.log("Firebase ref:", ref);
+      console.log("Firebase onValue:", onValue);
+      console.log("Firebase remove:", remove);
+
+      const tabelaEspera = document.getElementById("tabelaEspera");
+      const notificacoesDiv = document.getElementById("notificacoes");
+
+      function populateWaitingRoom() {
+        console.log("Populando sala de espera...");
+        onValue(ref(database, 'registrosFMO'), snapshot => {
+          console.log("Dados recebidos do Firebase para sala de espera:", snapshot.val());
+          tabelaEspera.innerHTML = "";
+          const registros = snapshot.val();
+          if (!registros) {
+            console.log("Nenhum registro encontrado");
+            tabelaEspera.innerHTML = '<tr><td colspan="6" class="text-center p-4">Nenhum motorista na sala de espera</td></tr>';
+            return;
+          }
+
+          // Ordenar registros por dataHora e filtrar status "Descarga finalizada"
+          const registrosArray = Object.keys(registros)
+            .map(id => ({ id, ...registros[id] }))
+            .filter(r => r.status !== "Descarga finalizada")
+            .sort((a, b) => new Date(a.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+)/, '$3-$2-$1 $4')) - new Date(b.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+)/, '$3-$2-$1 $4')));
+
+          registrosArray.forEach(r => {
+            console.log("Adicionando registro à sala de espera:", r);
+            const row = tabelaEspera.insertRow();
+            row.classList.add("border-b");
+            row.insertCell(0).textContent = r.motorista;
+            row.insertCell(1).textContent = r.fmo;
+            row.insertCell(2).textContent = r.placa;
+            row.insertCell(3).textContent = r.dataHora;
+            row.insertCell(4).textContent = r.status || "Aguardando descarregamento";
+            row.insertCell(5).textContent = r.docaSelecionada || "Não atribuída";
+          });
+
+          // Remover notificações de motoristas com status "Descarga finalizada"
+          Object.keys(registros).forEach(id => {
+            if (registros[id].status === "Descarga finalizada") {
+              console.log("Removendo notificações do registro:", id);
+              remove(ref(database, `notificacoesFMO/${id}`)).catch(error => {
+                console.error("Erro ao remover notificações:", error);
+              });
+            }
+          });
+        }, error => {
+          console.error("Erro ao carregar registros:", error);
+          tabelaEspera.innerHTML = '<tr><td colspan="6" class="text-center p-4">Erro ao carregar registros</td></tr>';
+        });
+      }
+
+      function populateNotifications() {
+        console.log("Populando notificações...");
+        onValue(ref(database, 'notificacoesFMO'), snapshot => {
+          console.log("Notificações recebidas do Firebase:", snapshot.val());
+          notificacoesDiv.innerHTML = "";
+          const notificacoes = snapshot.val();
+          if (!notificacoes) {
+            console.log("Nenhuma notificação encontrada");
+            notificacoesDiv.innerHTML = '<p class="text-center text-gray-500">Nenhuma notificação no momento</p>';
+            return;
+          }
+
+          // Obter a notificação mais recente por motorista
+          const ultimasNotificacoes = [];
+          Object.keys(notificacoes).forEach(id => {
+            const notificacoesMotorista = notificacoes[id];
+            const notificacoesArray = Object.keys(notificacoesMotorista).map(notifId => ({
+              id,
+              notifId,
+              ...notificacoesMotorista[notifId]
+            }));
+            // Ordenar por dataHora e pegar a mais recente
+            const maisRecente = notificacoesArray.sort((a, b) => 
+              new Date(b.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$2-$1 $4')) - 
+              new Date(a.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$2-$1 $4'))
+            )[0];
+            if (maisRecente) ultimasNotificacoes.push(maisRecente);
+          });
+
+          if (ultimasNotificacoes.length === 0) {
+            notificacoesDiv.innerHTML = '<p class="text-center text-gray-500">Nenhuma notificação no momento</p>';
+            return;
+          }
+
+          // Ordenar notificações por dataHora (mais recentes primeiro)
+          ultimasNotificacoes.sort((a, b) => 
+            new Date(b.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$2-$1 $4')) - 
+            new Date(a.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$2-$1 $4'))
+          );
+
+          ultimasNotificacoes.forEach(n => {
+            console.log("Adicionando notificação:", n);
+            const div = document.createElement("div");
+            div.classList.add("notification");
+            div.innerHTML = `
+              ${n.motorista} (FMO: ${n.fmo}, Placa: ${n.placa})<br>
+              ${n.mensagem || `Status atualizado: ${n.status}`}<br>
+              ${n.dataHora}
+            `;
+            notificacoesDiv.appendChild(div);
+          });
+        }, error => {
+          console.error("Erro ao carregar notificações:", error);
+          notificacoesDiv.innerHTML = '<p class="text-center text-red-500">Erro ao carregar notificações</p>';
+        });
+      }
+
+      populateWaitingRoom();
+      populateNotifications();
+    });
+  </script>
+</body>
+</html>
