@@ -167,7 +167,7 @@
   <header class="header">
     <div class="max-w-7xl mx-auto flex items-center gap-3">
       <i class="fas fa-clipboard text-2xl"></i>
-      <h1 class="text-2xl font-semibold">Registros de FMO - CDC Barueri</h1>
+      <h1 class="text-2xl font-semibold">Cadastro D2D - CDC Barueri</h1>
     </div>
   </header>
 
@@ -419,6 +419,10 @@
                 alert("Selecione a doca antes de enviar.");
                 return;
               }
+              if (!r.placa) {
+                alert("Placa do veículo não informada.");
+                return;
+              }
 
               console.log("Enviando mensagem WhatsApp para:", r.telefone);
               database.ref(`registrosFMO/${id}`).update({ docaSelecionada }).then(() => {
@@ -431,7 +435,6 @@ Placa do carro: ${r.placa}
 Doca de descarregamento: ${docaSelecionada}`;
 
                 const telefoneLimpo = r.telefone.replace(/\D/g, "");
-                // Verificar se o número começa com o DDD (ex.: 11) e tem pelo menos 10 dígitos
                 if (telefoneLimpo.length < 10) {
                   alert("Número de telefone inválido. Deve conter pelo menos 10 dígitos.");
                   return;
