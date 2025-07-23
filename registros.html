@@ -90,6 +90,10 @@
       color: #dc2626;
       font-weight: 500;
     }
+    .valid-address {
+      color: #16a34a;
+      font-weight: 500;
+    }
     .cep-link {
       color: #2563eb;
       cursor: pointer;
@@ -190,7 +194,7 @@
               <th><i class="fas fa-image fa-xs mr-1"></i> Foto</th>
               <th><i class="fas fa-warehouse fa-xs mr-1"></i> Doca</th>
               <th><i class="fas fa-info-circle fa-xs mr-1"></i> Status</th>
-              <th><i class="fab fa-whatsapp fa-xs mr-1"></i> WhatsApp</th>
+              <th><i class="fas fa-bell fa-xs mr-1"></i> Notificar</th>
             </tr>
           </thead>
           <tbody id="tabelaRegistros"></tbody>
@@ -208,21 +212,22 @@
   </div>
 
   <script type="module">
-    import { database, ref, update, onValue, remove } from './firebase-config.js';
+    import { database, ref, update, onValue, remove, push } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
-      console.log("Firebase database:", database); // Depuração
-      console.log("Firebase ref:", ref); // Depuração
-      console.log("Firebase update:", update); // Depuração
-      console.log("Firebase onValue:", onValue); // Depuração
-      console.log("Firebase remove:", remove); // Depuração
+      console.log("Firebase database:", database);
+      console.log("Firebase ref:", ref);
+      console.log("Firebase update:", update);
+      console.log("Firebase onValue:", onValue);
+      console.log("Firebase remove:", remove);
+      console.log("Firebase push:", push);
 
       const tabela = document.getElementById("tabelaRegistros");
       const modal = document.getElementById("modal");
       const modalBody = document.getElementById("modal-body");
       const btnFecharModal = document.getElementById("btnFecharModal");
       const btnRelatorioGeral = document.getElementById("btnRelatorioGeral");
-      const targetAddress = "Av. Pref. João Vila-Lobos Quero - Jardim Belval, Barueri - SP, 06422-060";
+      const targetAddress = "Avenida Prefeito João Vilallobo Quero, Conjunto Habitacional Mirante dos Altos, Jardim Belval, Barueri, Região Imediata de São Paulo, Região Metropolitana de São Paulo, São Paulo, Região Sudeste, 06422-122, Brasil";
 
       const statuses = [
         "Aguardando descarregamento",
@@ -257,7 +262,6 @@
         modal.style.display = "none";
       }
 
-      // Associar evento de clique ao botão Fechar
       btnFecharModal.addEventListener('click', () => {
         console.log("Botão Fechar clicado");
         closeModal();
@@ -272,7 +276,17 @@
           if (idx < statuses.length - 1) {
             idx++;
             const newStatus = statuses[idx];
-            update(ref(database, `registrosFMO/${id}`), { status: newStatus }).then(() => {
+            const notificacao = {
+              motorista: record.motorista,
+              fmo: record.fmo,
+              placa: record.placa,
+              status: newStatus,
+              dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+            };
+            Promise.all([
+              update(ref(database, `registrosFMO/${id}`), { status: newStatus }),
+              push(ref(database, `notificacoesFMO/${id}`), notificacao)
+            ]).then(() => {
               statusCell.textContent = newStatus;
               if (idx === statuses.length - 1) {
                 btn.disabled = true;
@@ -283,8 +297,9 @@
                 btn.classList.remove("bg-gray-400", "cursor-not-allowed");
               }
               console.log("Status atualizado para:", newStatus);
+              console.log("Notificação enviada:", notificacao);
             }).catch(error => {
-              console.error("Erro ao atualizar status:", error);
+              console.error("Erro ao atualizar status ou enviar notificação:", error);
               alert("Erro ao atualizar status: " + error.message);
             });
           }
@@ -318,19 +333,19 @@
 
             const motoristaCell = row.insertCell(0);
             motoristaCell.textContent = r.motorista;
-            if (!isValidAddress) motoristaCell.classList.add("invalid-address");
+            motoristaCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
 
             const telefoneCell = row.insertCell(1);
             telefoneCell.textContent = r.telefone;
-            if (!isValidAddress) telefoneCell.classList.add("invalid-address");
+            telefoneCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
 
             const fmoCell = row.insertCell(2);
             fmoCell.textContent = r.fmo;
-            if (!isValidAddress) fmoCell.classList.add("invalid-address");
+            fmoCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
 
             const placaCell = row.insertCell(3);
             placaCell.textContent = r.placa;
-            if (!isValidAddress) placaCell.classList.add("invalid-address");
+            placaCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
 
             row.insertCell(4).textContent = r.dataHora;
 
@@ -349,17 +364,20 @@
                     const cep = extractCEP(endereco);
                     localCell.innerHTML = `<span class="cep-link">${cep}</span>`;
                     localCell.querySelector(".cep-link").onclick = () => openModal(r);
-                    if (endereco !== targetAddress) {
-                      motoristaCell.classList.add("invalid-address");
-                      telefoneCell.classList.add("invalid-address");
-                      fmoCell.classList.add("invalid-address");
-                      placaCell.classList.add("invalid-address");
-                    }
+                    const isValid = endereco === targetAddress;
+                    motoristaCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                    telefoneCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                    fmoCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                    placaCell.classList.add(isValid ? "valid-address" : "invalid-address");
                     console.log("Endereço atualizado:", endereco);
                   }).catch(error => {
                     console.error("Erro ao atualizar endereço:", error);
                     localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
                     localCell.querySelector(".cep-link").onclick = () => openModal(r);
+                    motoristaCell.classList.add("invalid-address");
+                    telefoneCell.classList.add("invalid-address");
+                    fmoCell.classList.add("invalid-address");
+                    placaCell.classList.add("invalid-address");
                   });
                 })
                 .catch(() => {
@@ -399,8 +417,19 @@
             });
             select.onchange = () => {
               console.log("Atualizando doca para:", select.value);
-              update(ref(database, `registrosFMO/${id}`), { docaSelecionada: select.value }).catch(error => {
-                console.error("Erro ao atualizar doca:", error);
+              const notificacao = {
+                motorista: r.motorista,
+                fmo: r.fmo,
+                placa: r.placa,
+                doca: select.value,
+                mensagem: select.value ? `Você foi direcionado à Doca ${select.value}` : "Doca removida",
+                dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+              };
+              Promise.all([
+                update(ref(database, `registrosFMO/${id}`), { docaSelecionada: select.value }),
+                push(ref(database, `notificacoesFMO/${id}`), notificacao)
+              ]).catch(error => {
+                console.error("Erro ao atualizar doca ou enviar notificação:", error);
                 alert("Erro ao atualizar doca: " + error.message);
               });
             };
@@ -425,14 +454,14 @@
             statusCell.appendChild(document.createElement("br"));
             statusCell.appendChild(btnStatus);
 
-            const whatsappCell = row.insertCell(9);
+            const notificarCell = row.insertCell(9);
             const btn = document.createElement("button");
             btn.className = "bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition w-full text-sm";
-            btn.innerHTML = '<i class="fab fa-whatsapp mr-1"></i>Enviar';
+            btn.innerHTML = '<i class="fas fa-bell mr-1"></i>Notificar';
             btn.onclick = () => {
               const docaSelecionada = select.value;
               if (!docaSelecionada) {
-                alert("Selecione a doca antes de enviar.");
+                alert("Selecione a doca antes de notificar.");
                 return;
               }
               if (!r.placa) {
@@ -440,31 +469,25 @@
                 return;
               }
 
-              console.log("Enviando mensagem WhatsApp para:", r.telefone);
-              update(ref(database, `registrosFMO/${id}`), { docaSelecionada }).then(() => {
-                const mensagem = 
-`Informe CDC Barueri.
-Hora de descarregamento: ${r.dataHora}
-FMO: ${r.fmo}
-Nome do motorista: ${r.motorista}
-Placa do carro: ${r.placa}
-Doca de descarregamento: ${docaSelecionada}`;
-
-                const telefoneLimpo = r.telefone.replace(/\D/g, "");
-                if (telefoneLimpo.length < 10) {
-                  alert("Número de telefone inválido. Deve conter pelo menos 10 dígitos.");
-                  return;
-                }
-                const link = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
-                window.open(link, "_blank");
-                console.log("Link do WhatsApp aberto:", link);
+              console.log("Enviando notificação para:", r.motorista);
+              const notificacao = {
+                motorista: r.motorista,
+                fmo: r.fmo,
+                placa: r.placa,
+                doca: docaSelecionada,
+                mensagem: `Informe CDC Barueri: Dirija-se à Doca ${docaSelecionada}`,
+                dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+              };
+              push(ref(database, `notificacoesFMO/${id}`), notificacao).then(() => {
+                console.log("Notificação enviada:", notificacao);
+                alert("Notificação enviada para a sala de espera!");
               }).catch(error => {
-                console.error("Erro ao atualizar doca no WhatsApp:", error);
-                alert("Erro ao enviar mensagem: " + error.message);
+                console.error("Erro ao enviar notificação:", error);
+                alert("Erro ao enviar notificação: " + error.message);
               });
             };
-            whatsappCell.classList.add("p-3");
-            whatsappCell.appendChild(btn);
+            notificarCell.classList.add("p-3");
+            notificarCell.appendChild(btn);
           });
         }, error => {
           console.error("Erro ao carregar registros:", error);
@@ -516,7 +539,6 @@ Doca de descarregamento: ${docaSelecionada}`;
         });
       }
 
-      // Associar evento ao botão de relatório geral
       btnRelatorioGeral.addEventListener('click', () => {
         console.log("Botão Enviar Relatório Geral clicado");
         enviarRelatorioGeral();
