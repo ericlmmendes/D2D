@@ -134,8 +134,7 @@
         </div>
         <div class="input-group">
           <label for="telefone"><i class="fas fa-phone mr-1"></i>Telefone</label>
-          <input type="tel" id="telefone" placeholder="(XX) 99999-9999" required
-                 pattern="\(\d{2}\)\s\d{5}-\d{4}" title="Formato: (XX) 99999-9999"
+          <input type="tel" id="telefone" placeholder="11999999999" required
                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div class="input-group">
@@ -202,10 +201,9 @@
             video.srcObject = stream;
             video.play();
             console.log("Câmera iniciada com sucesso");
-            // Aguarda o evento 'canplay' para garantir que o vídeo está pronto
             video.oncanplay = () => {
               console.log("Vídeo pronto para captura");
-              setTimeout(tirarFoto, 2000); // Aumentado para 2000ms
+              setTimeout(tirarFoto, 2000);
             };
           })
           .catch(err => {
@@ -229,7 +227,7 @@
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         console.log("Foto capturada com sucesso");
         canvas.classList.remove('hidden');
-        btnSalvar.style.display = 'block'; // Forçar visibilidade do botão
+        btnSalvar.style.display = 'block';
         console.log("Botão Salvar exibido");
         video.classList.add('hidden');
 
