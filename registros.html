@@ -1,0 +1,500 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registros de FMO - CDC Barueri</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    th {
+      background: #1e40af;
+      color: white;
+      font-weight: 600;
+    }
+    td {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    tbody tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    tbody tr:hover td {
+      background: #f1f5f9;
+      transition: background 0.2s ease;
+    }
+    img.table-img {
+      width: 80px;
+      height: auto;
+      object-fit: cover;
+      border-radius: 0.25rem;
+    }
+    .status-btn {
+      width: 140px;
+      font-size: 0.875rem;
+    }
+    .invalid-address {
+      color: #dc2626;
+      font-weight: 500;
+    }
+    .cep-link {
+      color: #2563eb;
+      cursor: pointer;
+      text-decoration: underline;
+      font-weight: 500;
+    }
+    .cep-link:hover {
+      color: #1e40af;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-content {
+      background: white;
+      margin: 0 auto;
+      padding: 1.5rem;
+      max-width: 90%;
+      width: 600px;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .modal img {
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+      border-radius: 0.5rem;
+      margin-top: 1rem;
+    }
+    .fixed-button {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 20;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(to right, #1e40af, #3b82f6);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @media (max-width: 640px) {
+      th, td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+      }
+      .status-btn {
+        width: 120px;
+        font-size: 0.75rem;
+      }
+      .modal-content {
+        width: 95%;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="header">
+    <div class="max-w-7xl mx-auto flex items-center gap-3">
+      <i class="fas fa-clipboard text-2xl"></i>
+      <h1 class="text-2xl font-semibold">Registros de FMO - CDC Barueri</h1>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 mt-6">
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <button onclick="enviarRelatorioGeral()" class="fixed-button bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium">
+        <i class="fas fa-file-export"></i> Enviar Relatório Geral
+      </button>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead>
+            <tr>
+              <th><i class="fas fa-user fa-xs mr-1"></i> Motorista</th>
+              <th><i class="fas fa-phone fa-xs mr-1"></i> Telefone</th>
+              <th><i class="fas fa-file-alt fa-xs mr-1"></i> FMO</th>
+              <th><i class="fas fa-truck fa-xs mr-1"></i> Placa</th>
+              <th><i class="fas fa-clock fa-xs mr-1"></i> Data e Hora</th>
+              <th><i class="fas fa-map-marker-alt fa-xs mr-1"></i> Local (CEP)</th>
+              <th><i class="fas fa-image fa-xs mr-1"></i> Foto</th>
+              <th><i class="fas fa-warehouse fa-xs mr-1"></i> Doca</th>
+              <th><i class="fas fa-info-circle fa-xs mr-1"></i> Status</th>
+              <th><i class="fab fa-whatsapp fa-xs mr-1"></i> WhatsApp</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaRegistros"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h3 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-info-circle mr-2"></i>Detalhes do Registro</h3>
+      <div id="modal-body" class="space-y-2 text-gray-700"></div>
+      <button onclick="closeModal()" class="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition w-full font-medium"><i class="fas fa-times mr-2"></i>Fechar</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { database } from './firebase-config.js';
+
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabela = document.getElementById("tabelaRegistros");
+      const modal = document.getElementById("modal");
+      const modalBody = document.getElementById("modal-body");
+      const targetAddress = "Av. Pref. João Vila-Lobos Quero - Jardim Belval, Barueri - SP, 06422-060";
+
+      const statuses = [
+        "Aguardando descarregamento",
+        "Em descarga",
+        "Descarga finalizada"
+      ];
+
+      function extractCEP(address) {
+        if (!address) return "Sem CEP";
+        const match = address.match(/\d{5}-\d{3}/);
+        return match ? match[0] : "Sem CEP";
+      }
+
+      function openModal(record) {
+        modalBody.innerHTML = `
+          <div class="grid grid-cols-1 gap-2">
+            <p><strong class="font-medium"><i class="fas fa-user mr-1"></i>Motorista:</strong> ${record.motorista}</p>
+            <p><strong class="font-medium"><i class="fas fa-phone mr-1"></i>Telefone:</strong> ${record.telefone}</p>
+            <p><strong class="font-medium"><i class="fas fa-file-alt mr-1"></i>FMO:</strong> ${record.fmo}</p>
+            <p><strong class="font-medium"><i class="fas fa-truck mr-1"></i>Placa:</strong> ${record.placa}</p>
+            <p><strong class="font-medium"><i class="fas fa-clock mr-1"></i>Data e Hora:</strong> ${record.dataHora}</p>
+            <p><strong class="font-medium"><i class="fas fa-map-marker-alt mr-1"></i>Endereço:</strong> ${record.enderecoCompleto || "Sem endereço"}</p>
+            <img src="${record.imagem}" alt="Foto do registro" class="mt-2" />
+          </div>
+        `;
+        modal.style.display = "flex";
+      }
+
+      function closeModal() {
+        modal.style.display = "none";
+      }
+
+      function trocaStatus(id, statusCell, btn) {
+        database.ref(`registrosFMO/${id}`).once('value').then(snapshot => {
+          const record = snapshot.val();
+          let atual = record.status || statuses[0];
+          let idx = statuses.indexOf(atual);
+          if (idx < statuses.length - 1) {
+            idx++;
+            const newStatus = statuses[idx];
+            database.ref(`registrosFMO/${id}`).update({ status: newStatus }).then(() => {
+              statusCell.textContent = newStatus;
+              if (idx === statuses.length - 1) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Status finalizado';
+                btn.classList.add("bg-gray-400", "cursor-not-allowed");
+              } else {
+                btn.innerHTML = '<i class="fas fa-sync mr-1"></i>Mudar para: ' + statuses[idx + 1];
+                btn.classList.remove("bg-gray-400", "cursor-not-allowed");
+              }
+            }).catch(error => {
+              console.error("Erro ao atualizar status:", error);
+              alert("Erro ao atualizar status. Tente novamente.");
+            });
+          }
+        });
+      }
+
+      function populateTable() {
+        tabela.innerHTML = "";
+        database.ref('registrosFMO').on('value', snapshot => {
+          tabela.innerHTML = "";
+          const registros = snapshot.val();
+          if (!registros) return;
+
+          Object.keys(registros).forEach((id, index) => {
+            const r = { ...registros[id], id };
+
+            const row = tabela.insertRow();
+            row.classList.add("border-b");
+
+            const isValidAddress = r.enderecoCompleto === targetAddress;
+
+            const motoristaCell = row.insertCell(0);
+            motoristaCell.textContent = r.motorista;
+            if (!isValidAddress) motoristaCell.classList.add("invalid-address");
+
+            const telefoneCell = row.insertCell(1);
+            telefoneCell.textContent = r.telefone;
+            if (!isValidAddress) telefoneCell.classList.add("invalid-address");
+
+            const fmoCell = row.insertCell(2);
+            fmoCell.textContent = r.fmo;
+            if (!isValidAddress) fmoCell.classList.add("invalid-address");
+
+            const placaCell = row.insertCell(3);
+            placaCell.textContent = r.placa;
+            if (!isValidAddress) placaCell.classList.add("invalid-address");
+
+            row.insertCell(4).textContent = r.dataHora;
+
+            const localCell = row.insertCell(5);
+            localCell.classList.add("p-3");
+            if (r.enderecoCompleto) {
+              localCell.innerHTML = `<span class="cep-link">${extractCEP(r.enderecoCompleto)}</span>`;
+              localCell.querySelector(".cep-link").onclick = () => openModal(r);
+            } else if (r.latitude && r.longitude) {
+              localCell.innerHTML = `<span class="cep-link">Carregando...</span>`;
+              fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${r.latitude}&lon=${r.longitude}`)
+                .then(res => res.json())
+                .then(data => {
+                  const endereco = data.display_name;
+                  database.ref(`registrosFMO/${id}`).update({ enderecoCompleto: endereco }).then(() => {
+                    const cep = extractCEP(endereco);
+                    localCell.innerHTML = `<span class="cep-link">${cep}</span>`;
+                    localCell.querySelector(".cep-link").onclick = () => openModal(r);
+                    if (endereco !== targetAddress) {
+                      motoristaCell.classList.add("invalid-address");
+                      telefoneCell.classList.add("invalid-address");
+                      fmoCell.classList.add("invalid-address");
+                      placaCell.classList.add("invalid-address");
+                    }
+                  });
+                })
+                .catch(() => {
+                  localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
+                  localCell.querySelector(".cep-link").onclick = () => openModal(r);
+                  motoristaCell.classList.add("invalid-address");
+                  telefoneCell.classList.add("invalid-address");
+                  fmoCell.classList.add("invalid-address");
+                  placaCell.classList.add("invalid-address");
+                });
+            } else {
+              localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
+              localCell.querySelector(".cep-link").onclick = () => openModal(r);
+              motoristaCell.classList.add("invalid-address");
+              telefoneCell.classList.add("invalid-address");
+              fmoCell.classList.add("invalid-address");
+              placaCell.classList.add("invalid-address");
+            }
+
+            const imgCell = row.insertCell(6);
+            const img = document.createElement("img");
+            img.src = r.imagem;
+            img.alt = "Foto";
+            img.classList.add("table-img");
+            imgCell.classList.add("p-3");
+            imgCell.appendChild(img);
+
+            const docaCell = row.insertCell(7);
+            const select = document.createElement("select");
+            select.classList.add("p-2", "border", "border-gray-300", "rounded-lg", "w-full", "bg-white", "focus:ring-2", "focus:ring-blue-500", "text-sm");
+            ["", "10", "11", "12"].forEach(opt => {
+              const option = document.createElement("option");
+              option.value = opt;
+              option.text = opt ? `Doca ${opt}` : "Selecionar";
+              if (r.docaSelecionada === opt) option.selected = true;
+              select.appendChild(option);
+            });
+            select.onchange = () => {
+              database.ref(`registrosFMO/${id}`).update({ docaSelecionada: select.value }).catch(error => {
+                console.error("Erro ao atualizar doca:", error);
+                alert("Erro ao atualizar doca. Tente novamente.");
+              });
+            };
+            docaCell.classList.add("p-3");
+            docaCell.appendChild(select);
+
+            const statusCell = row.insertCell(8);
+            statusCell.classList.add("p-3");
+            statusCell.textContent = r.status || statuses[0];
+
+            const btnStatus = document.createElement("button");
+            btnStatus.className = "status-btn bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition text-sm";
+            let currentStatusIndex = statuses.indexOf(r.status || statuses[0]);
+            btnStatus.innerHTML = currentStatusIndex === statuses.length - 1
+              ? '<i class="fas fa-check-circle mr-1"></i>Status finalizado'
+              : '<i class="fas fa-sync mr-1"></i>Mudar para: ' + statuses[currentStatusIndex + 1];
+            if (currentStatusIndex === statuses.length - 1) {
+              btnStatus.disabled = true;
+              btnStatus.classList.add("bg-gray-400", "cursor-not-allowed");
+            }
+            btnStatus.onclick = () => trocaStatus(id, statusCell, btnStatus);
+            statusCell.appendChild(document.createElement("br"));
+            statusCell.appendChild(btnStatus);
+
+            const whatsappCell = row.insertCell(9);
+            const btn = document.createElement("button");
+            btn.className = "bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition w-full text-sm";
+            btn.innerHTML = '<i class="fab fa-whatsapp mr-1"></i>Enviar';
+            btn.onclick = () => {
+              const docaSelecionada = select.value;
+              if (!docaSelecionada) {
+                alert("Selecione a doca antes de enviar.");
+                return;
+              }
+
+              database.ref(`registrosFMO/${id}`).update({ docaSelecionada }).then(() => {
+                const mensagem = 
+`Informe CDC Barueri.
+Hora de descarregamento: ${r.dataHora}
+FMO: ${r.fmo}
+Nome do motorista: ${r.motorista}
+Placa do carro: ${r.placa}
+Doca de descarregamento: ${docaSelecionada}`;
+
+                const telefoneLimpo = r.telefone.replace(/\D/g, "");
+                const link = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
+                window.open(link, "_blank");
+              }).catch(error => {
+                console.error("Erro ao atualizar doca no WhatsApp:", error);
+                alert("Erro ao enviar mensagem. Tente novamente.");
+              });
+            };
+            whatsappCell.classList.add("p-3");
+            whatsappCell.appendChild(btn);
+          });
+        });
+      }
+
+      function enviarRelatorioGeral() {
+        database.ref('registrosFMO').once('value').then(snapshot => {
+          const registros = snapshot.val();
+          if (!registros) {
+            alert("Nenhum registro encontrado.");
+            return;
+          }
+
+          let mensagem = `📋 *Relatório Geral - CDC Barueri*\n\n`;
+          Object.values(registros).forEach((r, i) => {
+            mensagem += `🔹 *Registro ${i + 1}:*\n`;
+            mensagem += `FMO: ${r.fmo}\n`;
+            mensagem += `Nome: ${r.motorista}\n`;
+            mensagem += `Placa: ${r.placa}\n`;
+            mensagem += `Hora: ${r.dataHora}\n`;
+            mensagem += `Endereço: ${r.enderecoCompleto || "Carregando..."}\n`;
+            mensagem += `Doca: ${r.docaSelecionada || "Não informada"}\n`;
+            mensagem += `Status: ${r.status || statuses[0]}\n\n`;
+          });
+
+          const link = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+          window.open(link, "_blank");
+
+          Object.keys(registros).forEach(id => {
+            if (registros[id].status === "Descarga finalizada") {
+              database.ref(`registrosFMO/${id}`).remove().catch(error => {
+                console.error("Erro ao remover registro:", error);
+              });
+            }
+          });
+        }).catch(error => {
+          console.error("Erro ao gerar relatório:", error);
+          alert("Erro ao gerar relatório. Tente novamente.");
+        });
+      }
+
+      populateTable();
+    });
+  </script>
+</body>
+</html>

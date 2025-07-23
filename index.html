@@ -1,0 +1,307 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de FMO - CDC Barueri</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    video, canvas {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 0.5rem;
+      border: 1px solid #e5e7eb;
+      margin-top: 1rem;
+    }
+    #btnSalvar {
+      display: none;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .round-button {
+      width: 3.5rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(to right, #1e40af, #3b82f6);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .input-group label {
+      display: block;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.25rem;
+    }
+    @media (max-width: 640px) {
+      .round-button {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1rem;
+      }
+      video, canvas {
+        max-width: 100%;
+      }
+      .header {
+        padding: 0.75rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="header">
+    <div class="max-w-7xl mx-auto flex items-center gap-3">
+      <i class="fas fa-camera text-2xl"></i>
+      <h1 class="text-2xl font-semibold">Cadastro de FMO - CDC Barueri</h1>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 mt-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-auto">
+      <form id="registroForm" class="space-y-4">
+        <div class="input-group">
+          <label for="motorista"><i class="fas fa-user mr-1"></i>Nome do Motorista</label>
+          <input type="text" id="motorista" placeholder="Digite o nome do motorista" required
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="input-group">
+          <label for="telefone"><i class="fas fa-phone mr-1"></i>Telefone</label>
+          <input type="tel" id="telefone" placeholder="(XX) 99999-9999" required
+                 pattern="\(\d{2}\)\s\d{5}-\d{4}" title="Formato: (XX) 99999-9999"
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="input-group">
+          <label for="fmo"><i class="fas fa-file-alt mr-1"></i>FMO</label>
+          <input type="text" id="fmo" placeholder="Digite o FMO" required
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="input-group">
+          <label for="placa"><i class="fas fa-truck mr-1"></i>Placa do Carro</label>
+          <input type="text" id="placa" placeholder="ABC-1234" required
+                 pattern="[A-Z]{3}-?\d{4}" title="Formato: ABC-1234"
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+
+        <video id="video" autoplay playsinline class="hidden"></video>
+        <div class="button-container">
+          <button type="button" id="btnTirarFoto" class="round-button bg-blue-600 text-white hover:bg-blue-700 transition">
+            <i class="fas fa-camera"></i>
+          </button>
+          <button type="button" id="btnVerRegistros" class="round-button bg-gray-600 text-white hover:bg-gray-700 transition hidden" onclick="abrirRegistros()">
+            <i class="fas fa-clipboard"></i>
+          </button>
+        </div>
+        <canvas id="canvas" class="hidden"></canvas>
+
+        <button type="submit" id="btnSalvar" class="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition font-medium flex items-center justify-center gap-2">
+          <i class="fas fa-save"></i> Salvar
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script type="module">
+    import { database } from './firebase-config.js';
+
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const context = canvas.getContext('2d');
+      const btnSalvar = document.getElementById('btnSalvar');
+      const btnTirarFoto = document.getElementById('btnTirarFoto');
+      const btnVerRegistros = document.getElementById('btnVerRegistros');
+
+      function camposPreenchidos() {
+        const motorista = document.getElementById("motorista").value.trim();
+        const telefone = document.getElementById("telefone").value.trim();
+        const fmo = document.getElementById("fmo").value.trim();
+        const placa = document.getElementById("placa").value.trim();
+        return motorista && telefone && fmo && placa;
+      }
+
+      btnTirarFoto.onclick = () => {
+        if (!camposPreenchidos()) {
+          alert("Por favor, preencha todos os campos antes de tirar a foto.");
+          return;
+        }
+
+        video.classList.remove('hidden');
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+          .then(stream => { video.srcObject = stream; })
+          .catch(err => alert("Erro ao acessar câmera: " + err));
+
+        setTimeout(tirarFoto, 1000);
+      };
+
+      function tirarFoto() {
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+          alert("A câmera ainda não está pronta, tente novamente.");
+          return;
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.classList.remove('hidden');
+        btnSalvar.classList.remove('hidden');
+        video.classList.add('hidden');
+
+        if (video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+        }
+      }
+
+      document.getElementById("registroForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        if (canvas.classList.contains('hidden')) {
+          alert("Por favor, tire a foto antes de salvar.");
+          return;
+        }
+
+        const motorista = document.getElementById("motorista").value.trim();
+        const telefone = document.getElementById("telefone").value.trim();
+        const fmo = document.getElementById("fmo").value.trim();
+        const placa = document.getElementById("placa").value.trim();
+        const dataHora = new Date().toLocaleString("pt-BR");
+
+        let latitude = '', longitude = '';
+
+        await new Promise(resolve => {
+          navigator.geolocation.getCurrentPosition(pos => {
+            latitude = pos.coords.latitude.toFixed(6);
+            longitude = pos.coords.longitude.toFixed(6);
+            resolve();
+          }, err => {
+            alert("Localização não permitida.");
+            resolve();
+          });
+        });
+
+        const imagemBase64 = canvas.toDataURL("image/png");
+
+        const novoRegistro = {
+          motorista,
+          telefone,
+          fmo,
+          placa,
+          dataHora,
+          latitude,
+          longitude,
+          imagem: imagemBase64,
+          status: "Aguardando descarregamento"
+        };
+
+        try {
+          await database.ref('registrosFMO').push(novoRegistro);
+          alert("Registro salvo com sucesso!");
+          this.reset();
+          canvas.classList.add('hidden');
+          btnSalvar.classList.add('hidden');
+        } catch (error) {
+          console.error("Erro ao salvar no Firebase:", error);
+          alert("Erro ao salvar o registro. Tente novamente.");
+        }
+      });
+
+      function abrirRegistros() {
+        window.open("registros.html", "_blank");
+      }
+
+      window.onload = function () {
+        const senha = prompt("Digite a senha de administrador para acesso total:");
+        if (senha === "adm123") {
+          btnVerRegistros.classList.remove("hidden");
+        }
+      };
+    });
+  </script>
+</body>
+</html>
