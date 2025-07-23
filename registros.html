@@ -167,7 +167,7 @@
   <header class="header">
     <div class="max-w-7xl mx-auto flex items-center gap-3">
       <i class="fas fa-clipboard text-2xl"></i>
-      <h1 class="text-2xl font-semibold">Cadastro D2D - CDC Barueri</h1>
+      <h1 class="text-2xl font-semibold">Registros de FMO - CDC Barueri</h1>
     </div>
   </header>
 
@@ -208,9 +208,12 @@
   </div>
 
   <script type="module">
-    import { database } from './firebase-config.js';
+    import { database, ref } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
+      console.log("Firebase database:", database); // Depuração
+      console.log("Firebase ref:", ref); // Depuração
+
       const tabela = document.getElementById("tabelaRegistros");
       const modal = document.getElementById("modal");
       const modalBody = document.getElementById("modal-body");
@@ -251,14 +254,14 @@
 
       function trocaStatus(id, statusCell, btn) {
         console.log("Mudando status do registro:", id);
-        database.ref(`registrosFMO/${id}`).once('value').then(snapshot => {
+        ref(database, `registrosFMO/${id}`).once('value').then(snapshot => {
           const record = snapshot.val();
           let atual = record.status || statuses[0];
           let idx = statuses.indexOf(atual);
           if (idx < statuses.length - 1) {
             idx++;
             const newStatus = statuses[idx];
-            database.ref(`registrosFMO/${id}`).update({ status: newStatus }).then(() => {
+            ref(database, `registrosFMO/${id}`).update({ status: newStatus }).then(() => {
               statusCell.textContent = newStatus;
               if (idx === statuses.length - 1) {
                 btn.disabled = true;
@@ -283,7 +286,7 @@
       function populateTable() {
         console.log("Populando tabela...");
         tabela.innerHTML = "";
-        database.ref('registrosFMO').on('value', snapshot => {
+        ref(database, 'registrosFMO').on('value', snapshot => {
           tabela.innerHTML = "";
           const registros = snapshot.val();
           if (!registros) {
@@ -329,7 +332,7 @@
                 .then(res => res.json())
                 .then(data => {
                   const endereco = data.display_name;
-                  database.ref(`registrosFMO/${id}`).update({ enderecoCompleto: endereco }).then(() => {
+                  ref(database, `registrosFMO/${id}`).update({ enderecoCompleto: endereco }).then(() => {
                     const cep = extractCEP(endereco);
                     localCell.innerHTML = `<span class="cep-link">${cep}</span>`;
                     localCell.querySelector(".cep-link").onclick = () => openModal(r);
@@ -383,7 +386,7 @@
             });
             select.onchange = () => {
               console.log("Atualizando doca para:", select.value);
-              database.ref(`registrosFMO/${id}`).update({ docaSelecionada: select.value }).catch(error => {
+              ref(database, `registrosFMO/${id}`).update({ docaSelecionada: select.value }).catch(error => {
                 console.error("Erro ao atualizar doca:", error);
                 alert("Erro ao atualizar doca: " + error.message);
               });
@@ -425,7 +428,7 @@
               }
 
               console.log("Enviando mensagem WhatsApp para:", r.telefone);
-              database.ref(`registrosFMO/${id}`).update({ docaSelecionada }).then(() => {
+              ref(database, `registrosFMO/${id}`).update({ docaSelecionada }).then(() => {
                 const mensagem = 
 `Informe CDC Barueri.
 Hora de descarregamento: ${r.dataHora}
@@ -458,7 +461,7 @@ Doca de descarregamento: ${docaSelecionada}`;
 
       function enviarRelatorioGeral() {
         console.log("Gerando relatório geral...");
-        database.ref('registrosFMO').once('value').then(snapshot => {
+        ref(database, 'registrosFMO').once('value').then(snapshot => {
           const registros = snapshot.val();
           if (!registros) {
             console.log("Nenhum registro encontrado para o relatório");
@@ -484,7 +487,7 @@ Doca de descarregamento: ${docaSelecionada}`;
 
           Object.keys(registros).forEach(id => {
             if (registros[id].status === "Descarga finalizada") {
-              database.ref(`registrosFMO/${id}`).remove().catch(error => {
+              ref(database, `registrosFMO/${id}`).remove().catch(error => {
                 console.error("Erro ao remover registro:", error);
               });
             }
