@@ -1,50 +1,10 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Registros de FMO - CDC Barueri</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     body {
@@ -230,6 +190,7 @@
       }
 
       function openModal(record) {
+        console.log("Abrindo modal com registro:", record);
         modalBody.innerHTML = `
           <div class="grid grid-cols-1 gap-2">
             <p><strong class="font-medium"><i class="fas fa-user mr-1"></i>Motorista:</strong> ${record.motorista}</p>
@@ -245,10 +206,12 @@
       }
 
       function closeModal() {
+        console.log("Fechando modal");
         modal.style.display = "none";
       }
 
       function trocaStatus(id, statusCell, btn) {
+        console.log("Mudando status do registro:", id);
         database.ref(`registrosFMO/${id}`).once('value').then(snapshot => {
           const record = snapshot.val();
           let atual = record.status || statuses[0];
@@ -266,6 +229,7 @@
                 btn.innerHTML = '<i class="fas fa-sync mr-1"></i>Mudar para: ' + statuses[idx + 1];
                 btn.classList.remove("bg-gray-400", "cursor-not-allowed");
               }
+              console.log("Status atualizado para:", newStatus);
             }).catch(error => {
               console.error("Erro ao atualizar status:", error);
               alert("Erro ao atualizar status: " + error.message);
@@ -278,14 +242,19 @@
       }
 
       function populateTable() {
+        console.log("Populando tabela...");
         tabela.innerHTML = "";
         database.ref('registrosFMO').on('value', snapshot => {
           tabela.innerHTML = "";
           const registros = snapshot.val();
-          if (!registros) return;
+          if (!registros) {
+            console.log("Nenhum registro encontrado");
+            return;
+          }
 
           Object.keys(registros).forEach((id, index) => {
             const r = { ...registros[id], id };
+            console.log("Adicionando registro à tabela:", r);
 
             const row = tabela.insertRow();
             row.classList.add("border-b");
@@ -331,6 +300,7 @@
                       fmoCell.classList.add("invalid-address");
                       placaCell.classList.add("invalid-address");
                     }
+                    console.log("Endereço atualizado:", endereco);
                   }).catch(error => {
                     console.error("Erro ao atualizar endereço:", error);
                     localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
@@ -373,6 +343,7 @@
               select.appendChild(option);
             });
             select.onchange = () => {
+              console.log("Atualizando doca para:", select.value);
               database.ref(`registrosFMO/${id}`).update({ docaSelecionada: select.value }).catch(error => {
                 console.error("Erro ao atualizar doca:", error);
                 alert("Erro ao atualizar doca: " + error.message);
@@ -410,6 +381,7 @@
                 return;
               }
 
+              console.log("Enviando mensagem WhatsApp para:", r.telefone);
               database.ref(`registrosFMO/${id}`).update({ docaSelecionada }).then(() => {
                 const mensagem = 
 `Informe CDC Barueri.
@@ -422,6 +394,7 @@ Doca de descarregamento: ${docaSelecionada}`;
                 const telefoneLimpo = r.telefone.replace(/\D/g, "");
                 const link = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
                 window.open(link, "_blank");
+                console.log("Link do WhatsApp aberto:", link);
               }).catch(error => {
                 console.error("Erro ao atualizar doca no WhatsApp:", error);
                 alert("Erro ao enviar mensagem: " + error.message);
@@ -437,9 +410,11 @@ Doca de descarregamento: ${docaSelecionada}`;
       }
 
       function enviarRelatorioGeral() {
+        console.log("Gerando relatório geral...");
         database.ref('registrosFMO').once('value').then(snapshot => {
           const registros = snapshot.val();
           if (!registros) {
+            console.log("Nenhum registro encontrado para o relatório");
             alert("Nenhum registro encontrado.");
             return;
           }
@@ -457,6 +432,7 @@ Doca de descarregamento: ${docaSelecionada}`;
           });
 
           const link = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+          console.log("Abrindo link do relatório no WhatsApp:", link);
           window.open(link, "_blank");
 
           Object.keys(registros).forEach(id => {
