@@ -168,11 +168,12 @@
   </main>
 
   <script type="module">
-    import { database, ref } from './firebase-config.js';
+    import { database, ref, push } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       console.log("Firebase database:", database); // Depuração
       console.log("Firebase ref:", ref); // Depuração
+      console.log("Firebase push:", push); // Depuração
 
       const video = document.getElementById('video');
       const canvas = document.getElementById('canvas');
@@ -294,10 +295,10 @@
         console.log("Registro a ser salvo:", novoRegistro);
 
         try {
-          if (!ref || typeof ref !== 'function') {
-            throw new Error("Firebase ref não está definido ou não é uma função");
+          if (!push || typeof push !== 'function') {
+            throw new Error("Firebase push não está definido ou não é uma função");
           }
-          await ref(database, 'registrosFMO').push(novoRegistro);
+          await push(ref(database, 'registrosFMO'), novoRegistro);
           console.log("Registro salvo com sucesso no Firebase");
           alert("Registro salvo com sucesso!");
           this.reset();
