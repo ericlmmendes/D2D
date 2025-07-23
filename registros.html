@@ -173,7 +173,7 @@
 
   <main class="max-w-7xl mx-auto p-4 sm:p-6 mt-6">
     <div class="bg-white rounded-xl shadow-lg p-6">
-      <button onclick="enviarRelatorioGeral()" class="fixed-button bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium">
+      <button id="btnRelatorioGeral" class="fixed-button bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium">
         <i class="fas fa-file-export"></i> Enviar Relatório Geral
       </button>
 
@@ -203,20 +203,25 @@
     <div class="modal-content">
       <h3 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-info-circle mr-2"></i>Detalhes do Registro</h3>
       <div id="modal-body" class="space-y-2 text-gray-700"></div>
-      <button onclick="closeModal()" class="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition w-full font-medium"><i class="fas fa-times mr-2"></i>Fechar</button>
+      <button id="btnFecharModal" class="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition w-full font-medium"><i class="fas fa-times mr-2"></i>Fechar</button>
     </div>
   </div>
 
   <script type="module">
-    import { database, ref } from './firebase-config.js';
+    import { database, ref, update, onValue, remove } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       console.log("Firebase database:", database); // Depuração
       console.log("Firebase ref:", ref); // Depuração
+      console.log("Firebase update:", update); // Depuração
+      console.log("Firebase onValue:", onValue); // Depuração
+      console.log("Firebase remove:", remove); // Depuração
 
       const tabela = document.getElementById("tabelaRegistros");
       const modal = document.getElementById("modal");
       const modalBody = document.getElementById("modal-body");
+      const btnFecharModal = document.getElementById("btnFecharModal");
+      const btnRelatorioGeral = document.getElementById("btnRelatorioGeral");
       const targetAddress = "Av. Pref. João Vila-Lobos Quero - Jardim Belval, Barueri - SP, 06422-060";
 
       const statuses = [
@@ -252,16 +257,22 @@
         modal.style.display = "none";
       }
 
+      // Associar evento de clique ao botão Fechar
+      btnFecharModal.addEventListener('click', () => {
+        console.log("Botão Fechar clicado");
+        closeModal();
+      });
+
       function trocaStatus(id, statusCell, btn) {
         console.log("Mudando status do registro:", id);
-        ref(database, `registrosFMO/${id}`).once('value').then(snapshot => {
+        onValue(ref(database, `registrosFMO/${id}`), snapshot => {
           const record = snapshot.val();
           let atual = record.status || statuses[0];
           let idx = statuses.indexOf(atual);
           if (idx < statuses.length - 1) {
             idx++;
             const newStatus = statuses[idx];
-            ref(database, `registrosFMO/${id}`).update({ status: newStatus }).then(() => {
+            update(ref(database, `registrosFMO/${id}`), { status: newStatus }).then(() => {
               statusCell.textContent = newStatus;
               if (idx === statuses.length - 1) {
                 btn.disabled = true;
@@ -277,7 +288,7 @@
               alert("Erro ao atualizar status: " + error.message);
             });
           }
-        }).catch(error => {
+        }, { onlyOnce: true }, error => {
           console.error("Erro ao buscar status:", error);
           alert("Erro ao buscar status: " + error.message);
         });
@@ -286,11 +297,13 @@
       function populateTable() {
         console.log("Populando tabela...");
         tabela.innerHTML = "";
-        ref(database, 'registrosFMO').on('value', snapshot => {
+        onValue(ref(database, 'registrosFMO'), snapshot => {
+          console.log("Dados recebidos do Firebase:", snapshot.val());
           tabela.innerHTML = "";
           const registros = snapshot.val();
           if (!registros) {
             console.log("Nenhum registro encontrado");
+            tabela.innerHTML = '<tr><td colspan="10" class="text-center p-4">Nenhum registro encontrado</td></tr>';
             return;
           }
 
@@ -332,7 +345,7 @@
                 .then(res => res.json())
                 .then(data => {
                   const endereco = data.display_name;
-                  ref(database, `registrosFMO/${id}`).update({ enderecoCompleto: endereco }).then(() => {
+                  update(ref(database, `registrosFMO/${id}`), { enderecoCompleto: endereco }).then(() => {
                     const cep = extractCEP(endereco);
                     localCell.innerHTML = `<span class="cep-link">${cep}</span>`;
                     localCell.querySelector(".cep-link").onclick = () => openModal(r);
@@ -386,7 +399,7 @@
             });
             select.onchange = () => {
               console.log("Atualizando doca para:", select.value);
-              ref(database, `registrosFMO/${id}`).update({ docaSelecionada: select.value }).catch(error => {
+              update(ref(database, `registrosFMO/${id}`), { docaSelecionada: select.value }).catch(error => {
                 console.error("Erro ao atualizar doca:", error);
                 alert("Erro ao atualizar doca: " + error.message);
               });
@@ -428,7 +441,7 @@
               }
 
               console.log("Enviando mensagem WhatsApp para:", r.telefone);
-              ref(database, `registrosFMO/${id}`).update({ docaSelecionada }).then(() => {
+              update(ref(database, `registrosFMO/${id}`), { docaSelecionada }).then(() => {
                 const mensagem = 
 `Informe CDC Barueri.
 Hora de descarregamento: ${r.dataHora}
@@ -460,43 +473,54 @@ Doca de descarregamento: ${docaSelecionada}`;
       }
 
       function enviarRelatorioGeral() {
-        console.log("Gerando relatório geral...");
-        ref(database, 'registrosFMO').once('value').then(snapshot => {
+        console.log("Iniciando geração do relatório geral...");
+        onValue(ref(database, 'registrosFMO'), snapshot => {
+          console.log("Dados do relatório recebidos:", snapshot.val());
           const registros = snapshot.val();
           if (!registros) {
             console.log("Nenhum registro encontrado para o relatório");
             alert("Nenhum registro encontrado.");
+            tabela.innerHTML = '<tr><td colspan="10" class="text-center p-4">Nenhum registro encontrado</td></tr>';
             return;
           }
 
           let mensagem = `📋 *Relatório Geral - CDC Barueri*\n\n`;
           Object.values(registros).forEach((r, i) => {
+            console.log("Processando registro para relatório:", r);
             mensagem += `🔹 *Registro ${i + 1}:*\n`;
-            mensagem += `FMO: ${r.fmo}\n`;
-            mensagem += `Nome: ${r.motorista}\n`;
-            mensagem += `Placa: ${r.placa}\n`;
-            mensagem += `Hora: ${r.dataHora}\n`;
-            mensagem += `Endereço: ${r.enderecoCompleto || "Carregando..."}\n`;
-            mensagem += `Doca: ${r.docaSelecionada || "Não informada"}\n`;
+            mensagem += `FMO: ${r.fmo || 'Não informado'}\n`;
+            mensagem += `Nome: ${r.motorista || 'Não informado'}\n`;
+            mensagem += `Placa: ${r.placa || 'Não informada'}\n`;
+            mensagem += `Hora: ${r.dataHora || 'Não informada'}\n`;
+            mensagem += `Endereço: ${r.enderecoCompleto || 'Carregando...'}\n`;
+            mensagem += `Doca: ${r.docaSelecionada || 'Não informada'}\n`;
             mensagem += `Status: ${r.status || statuses[0]}\n\n`;
           });
 
+          console.log("Mensagem do relatório gerada:", mensagem);
           const link = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
           console.log("Abrindo link do relatório no WhatsApp:", link);
           window.open(link, "_blank");
 
           Object.keys(registros).forEach(id => {
             if (registros[id].status === "Descarga finalizada") {
-              ref(database, `registrosFMO/${id}`).remove().catch(error => {
+              console.log("Removendo registro finalizado:", id);
+              remove(ref(database, `registrosFMO/${id}`)).catch(error => {
                 console.error("Erro ao remover registro:", error);
               });
             }
           });
-        }).catch(error => {
+        }, { onlyOnce: true }, error => {
           console.error("Erro ao gerar relatório:", error);
           alert("Erro ao gerar relatório: " + error.message);
         });
       }
+
+      // Associar evento ao botão de relatório geral
+      btnRelatorioGeral.addEventListener('click', () => {
+        console.log("Botão Enviar Relatório Geral clicado");
+        enviarRelatorioGeral();
+      });
 
       populateTable();
     });
