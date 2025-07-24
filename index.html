@@ -56,9 +56,6 @@
       border: 1px solid #e5e7eb;
       margin-top: 1rem;
     }
-    #btnSalvar {
-      display: none;
-    }
     .button-container {
       display: flex;
       justify-content: center;
@@ -117,9 +114,34 @@
       animation: spin 1s linear infinite;
       margin-left: 0.5rem;
     }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-content {
+      background: white;
+      padding: 1.5rem;
+      max-width: 90%;
+      width: 400px;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+    }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     @media (max-width: 640px) {
       .round-button {
@@ -137,6 +159,10 @@
         width: 3.5rem;
         height: 3.5rem;
         font-size: 1.25rem;
+      }
+      .modal-content {
+        width: 95%;
+        padding: 1rem;
       }
     }
   </style>
@@ -183,11 +209,6 @@
           </button>
         </div>
         <canvas id="canvas" class="hidden"></canvas>
-
-        <button type="submit" id="btnSalvar" class="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition font-medium flex items-center justify-center gap-2">
-          <i class="fas fa-save"></i> Salvar
-          <span id="spinner" class="spinner"></span>
-        </button>
       </form>
     </div>
   </main>
@@ -196,22 +217,40 @@
     <i class="fas fa-clock"></i>
   </button>
 
+  <div id="modalConfirmar" class="modal">
+    <div class="modal-content">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-question-circle mr-2"></i>Confirmar Salvamento</h3>
+      <p class="text-gray-700 mb-4">Deseja salvar as informações?</p>
+      <div class="flex justify-end gap-2">
+        <button id="btnCancelarModal" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+          <i class="fas fa-times mr-2"></i>Cancelar
+        </button>
+        <button id="btnConfirmarModal" class="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition flex items-center gap-2 text-lg shadow-md">
+          <i class="fas fa-check mr-2"></i>Salvar
+          <span id="spinnerModal" class="spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { database, ref, push } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
-      console.log("Firebase database:", database); // Depuração
-      console.log("Firebase ref:", ref); // Depuração
-      console.log("Firebase push:", push); // Depuração
+      console.log("Firebase database:", database);
+      console.log("Firebase ref:", ref);
+      console.log("Firebase push:", push);
 
       const video = document.getElementById('video');
       const canvas = document.getElementById('canvas');
       const context = canvas.getContext('2d');
-      const btnSalvar = document.getElementById('btnSalvar');
       const btnTirarFoto = document.getElementById('btnTirarFoto');
       const btnVerRegistros = document.getElementById('btnVerRegistros');
       const btnSalaEspera = document.getElementById('btnSalaEspera');
-      const spinner = document.getElementById('spinner');
+      const modalConfirmar = document.getElementById('modalConfirmar');
+      const btnConfirmarModal = document.getElementById('btnConfirmarModal');
+      const btnCancelarModal = document.getElementById('btnCancelarModal');
+      const spinnerModal = document.getElementById('spinnerModal');
 
       // Evento para o botão Sala de Espera
       btnSalaEspera.addEventListener('click', () => {
@@ -266,8 +305,6 @@
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         console.log("Foto capturada com sucesso");
         canvas.classList.remove('hidden');
-        btnSalvar.style.display = 'block';
-        console.log("Botão Salvar exibido");
         video.classList.add('hidden');
 
         if (video.srcObject) {
@@ -275,6 +312,10 @@
           video.srcObject = null;
           console.log("Stream da câmera encerrado");
         }
+
+        // Abrir modal de confirmação após tirar a foto
+        console.log("Abrindo modal de confirmação");
+        modalConfirmar.style.display = 'flex';
       }
 
       btnVerRegistros.addEventListener('click', () => {
@@ -282,17 +323,18 @@
         window.open("registros.html", "_blank");
       });
 
-      document.getElementById("registroForm").addEventListener("submit", async function(e) {
-        e.preventDefault();
-        console.log("Formulário submetido");
+      // Fechar modal ao clicar em Cancelar
+      btnCancelarModal.addEventListener('click', () => {
+        console.log("Botão Cancelar clicado");
+        modalConfirmar.style.display = 'none';
+      });
 
-        if (canvas.classList.contains('hidden')) {
-          alert("Por favor, tire a foto antes de salvar.");
-          return;
-        }
-
-        spinner.style.display = 'inline-block';
-        btnSalvar.disabled = true;
+      // Confirmar salvamento no modal
+      btnConfirmarModal.addEventListener('click', async () => {
+        console.log("Botão Salvar (modal) clicado");
+        spinnerModal.style.display = 'inline-block';
+        btnConfirmarModal.disabled = true;
+        btnCancelarModal.disabled = true;
 
         const motorista = document.getElementById("motorista").value.trim();
         const telefone = document.getElementById("telefone").value.trim();
@@ -336,16 +378,17 @@
           }
           await push(ref(database, 'registrosFMO'), novoRegistro);
           console.log("Registro salvo com sucesso no Firebase");
-          alert("Registro salvo com sucesso!");
-          this.reset();
+          alert("Registro salvo com sucesso! Redirecionando para a sala de espera...");
+          document.getElementById("registroForm").reset();
           canvas.classList.add('hidden');
-          btnSalvar.style.display = 'none';
+          modalConfirmar.style.display = 'none';
+          window.location.href = "sala_espera.html";
         } catch (error) {
           console.error("Erro ao salvar no Firebase:", error);
           alert("Erro ao salvar o registro: " + error.message);
-        } finally {
-          spinner.style.display = 'none';
-          btnSalvar.disabled = false;
+          spinnerModal.style.display = 'none';
+          btnConfirmarModal.disabled = false;
+          btnCancelarModal.disabled = false;
         }
       });
 
