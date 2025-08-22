@@ -225,11 +225,11 @@
     }
   </style>
 </head>
-<body class="min-h-screen">
+<body class="bg-gray-50 min-h-screen">
   <header class="header">
     <div class="max-w-7xl mx-auto flex items-center gap-3">
-      <i class="fas fa-clipboard text-3xl"></i>
-      <h1 class="text-3xl font-bold">Registros D2D - CDC Barueri</h1>
+      <i class="fas fa-clipboard text-2xl"></i>
+      <h1 class="text-2xl font-bold">Registros D2D - CDC Barueri</h1>
     </div>
   </header>
 
@@ -638,7 +638,7 @@
 
           const docDefinition = {
             content: [
-              { text: 'Relatório Geral - CDC Barueri', style: 'header' },
+              { text: 'Relatório Geral D2D - CDC Barueri', style: 'header' },
               { text: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }), style: 'subheader' },
               { text: `Descargas Finalizadas: ${finalizadas}`, style: 'summary' },
               { text: `Aguardando Descarregamento: ${aguardando}`, style: 'summary' },
@@ -668,11 +668,11 @@
               }
             ],
             styles: {
-              header: { fontSize: 22, bold: true, margin: [0, 0, 0, 10] },
-              subheader: { fontSize: 14, italics: true, margin: [0, 0, 0, 20] },
+              header: { fontSize: 15, bold: true, margin: [0, 0, 0, 10] },
+              subheader: { fontSize: 12, italics: true, margin: [0, 0, 0, 20] },
               summary: { fontSize: 12, bold: true, margin: [0, 5, 0, 5] }
             },
-            defaultStyle: { fontSize: 10 }
+            defaultStyle: { fontSize: 5 }
           };
 
           pdfMake.createPdf(docDefinition).download('Relatorio_CDC_Barueri.pdf');
