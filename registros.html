@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Converta a planilha em JSON para filtrar linhas em branco
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filtrar linhas em branco (linhas onde todas as células estão vazias, nulas ou indefinidas)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heurística para encontrar a linha de cabeçalho ignorando linhas com menos células preenchidas do que a próxima linha
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Cair pra trás
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Converte JSON filtrado de volta para CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Cria uma nova planilha a partir de uma matriz filtrada de matrizes
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -340,6 +301,7 @@
         "Em descarga",
         "Descarga finalizada"
       ];
+      const docks = ["10", "11", "12"];
 
       function extractCEP(address) {
         if (!address) return "Sem CEP";
@@ -368,9 +330,26 @@
 
       btnFecharModal.addEventListener('click', closeModal);
 
+      async function getAvailableDock() {
+        return new Promise((resolve) => {
+          onValue(ref(database, 'registrosFMO'), snapshot => {
+            const registros = snapshot.val() || {};
+            const usedDocks = Object.values(registros)
+              .filter(r => r.docaSelecionada && r.status !== "Descarga finalizada")
+              .map(r => r.docaSelecionada);
+            const availableDock = docks.find(dock => !usedDocks.includes(dock)) || "";
+            resolve(availableDock);
+          }, { onlyOnce: true });
+        });
+      }
+
       function trocaStatus(id, btn) {
-        onValue(ref(database, `registrosFMO/${id}`), snapshot => {
+        onValue(ref(database, `registrosFMO/${id}`), async snapshot => {
           const record = snapshot.val();
+          if (!record.notificado) {
+            alert("Clique em Notificar antes de alterar o status.");
+            return;
+          }
           let atual = record.status || statuses[0];
           let idx = statuses.indexOf(atual);
           if (idx < statuses.length - 1) {
@@ -383,23 +362,22 @@
               status: newStatus,
               dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
             };
-            Promise.all([
-              update(ref(database, `registrosFMO/${id}`), { status: newStatus }),
-              push(ref(database, `notificacoesFMO/${id}`), notificacao)
-            ]).then(() => {
+            try {
+              await Promise.all([
+                update(ref(database, `registrosFMO/${id}`), { status: newStatus }),
+                push(ref(database, `notificacoesFMO/${id}`), notificacao)
+              ]);
               btn.innerHTML = `<i class="${idx === statuses.length - 1 ? 'fas fa-check-circle' : 'fas fa-sync'} mr-1"></i>${newStatus}`;
               btn.classList.remove('aguardando', 'em-descarga', 'finalizado');
               btn.classList.add(idx === 0 ? 'aguardando' : idx === 1 ? 'em-descarga' : 'finalizado');
               if (idx === statuses.length - 1) {
                 btn.disabled = true;
-              } else {
-                btn.disabled = false;
               }
               updateSummary();
-            }).catch(error => {
+            } catch (error) {
               console.error("Erro ao atualizar status ou enviar notificação:", error);
               alert("Erro ao atualizar status: " + error.message);
-            });
+            }
           }
         }, { onlyOnce: true });
       }
@@ -419,9 +397,9 @@
         }, { onlyOnce: true });
       }
 
-      function populateTable() {
+      async function populateTable() {
         tabela.innerHTML = "";
-        onValue(ref(database, 'registrosFMO'), snapshot => {
+        onValue(ref(database, 'registrosFMO'), async snapshot => {
           tabela.innerHTML = "";
           const registros = snapshot.val();
           if (!registros) {
@@ -430,8 +408,8 @@
             return;
           }
 
-          Object.keys(registros).forEach((id, index) => {
-            const r = { ...registros[id], id };
+          for (const [id, r] of Object.entries(registros)) {
+            const record = { ...r, id };
             const row = tabela.insertRow();
             row.classList.add("border-b");
 
@@ -459,7 +437,7 @@
             localCell.classList.add("p-3");
             if (r.enderecoCompleto) {
               localCell.innerHTML = `<span class="cep-link">${extractCEP(r.enderecoCompleto)}</span>`;
-              localCell.querySelector(".cep-link").onclick = () => openModal(r);
+              localCell.querySelector(".cep-link").onclick = () => openModal(record);
             } else if (r.latitude && r.longitude) {
               localCell.innerHTML = `<span class="cep-link">Carregando...</span>`;
               fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${r.latitude}&lon=${r.longitude}`)
@@ -469,7 +447,7 @@
                   update(ref(database, `registrosFMO/${id}`), { enderecoCompleto: endereco }).then(() => {
                     const cep = extractCEP(endereco);
                     localCell.innerHTML = `<span class="cep-link">${cep}</span>`;
-                    localCell.querySelector(".cep-link").onclick = () => openModal(r);
+                    localCell.querySelector(".cep-link").onclick = () => openModal(record);
                     const isValid = endereco === targetAddress;
                     motoristaCell.classList.add(isValid ? "valid-address" : "invalid-address");
                     telefoneCell.classList.add(isValid ? "valid-address" : "invalid-address");
@@ -477,7 +455,7 @@
                     placaCell.classList.add(isValid ? "valid-address" : "invalid-address");
                   }).catch(error => {
                     localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
-                    localCell.querySelector(".cep-link").onclick = () => openModal(r);
+                    localCell.querySelector(".cep-link").onclick = () => openModal(record);
                     motoristaCell.classList.add("invalid-address");
                     telefoneCell.classList.add("invalid-address");
                     fmoCell.classList.add("invalid-address");
@@ -486,7 +464,7 @@
                 })
                 .catch(() => {
                   localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
-                  localCell.querySelector(".cep-link").onclick = () => openModal(r);
+                  localCell.querySelector(".cep-link").onclick = () => openModal(record);
                   motoristaCell.classList.add("invalid-address");
                   telefoneCell.classList.add("invalid-address");
                   fmoCell.classList.add("invalid-address");
@@ -494,7 +472,7 @@
                 });
             } else {
               localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
-              localCell.querySelector(".cep-link").onclick = () => openModal(r);
+              localCell.querySelector(".cep-link").onclick = () => openModal(record);
               motoristaCell.classList.add("invalid-address");
               telefoneCell.classList.add("invalid-address");
               fmoCell.classList.add("invalid-address");
@@ -506,36 +484,39 @@
             img.src = r.imagem;
             img.alt = "Foto";
             img.classList.add("table-img");
-            img.onclick = () => openModal(r);
+            img.onclick = () => openModal(record);
             imgCell.classList.add("p-3");
             imgCell.appendChild(img);
 
             const docaCell = row.insertCell(7);
             const select = document.createElement("select");
             select.classList.add("p-2", "border", "border-gray-300", "rounded-lg", "w-full", "bg-white", "focus:ring-2", "focus:ring-blue-500", "text-sm");
-            ["", "10", "11", "12"].forEach(opt => {
+            ["", ...docks].forEach(opt => {
               const option = document.createElement("option");
               option.value = opt;
               option.text = opt ? `Doca ${opt}` : "Selecionar";
               if (r.docaSelecionada === opt) option.selected = true;
               select.appendChild(option);
             });
-            select.onchange = () => {
+            select.onchange = async () => {
+              const newDock = select.value;
               const notificacao = {
                 motorista: r.motorista,
                 fmo: r.fmo,
                 placa: r.placa,
-                doca: select.value,
-                mensagem: select.value ? `Você foi direcionado à Doca ${select.value}` : "Doca removida",
+                doca: newDock,
+                mensagem: newDock ? `Você foi direcionado à Doca ${newDock}` : "Doca removida",
                 dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
               };
-              Promise.all([
-                update(ref(database, `registrosFMO/${id}`), { docaSelecionada: select.value }),
-                push(ref(database, `notificacoesFMO/${id}`), notificacao)
-              ]).catch(error => {
+              try {
+                await Promise.all([
+                  update(ref(database, `registrosFMO/${id}`), { docaSelecionada: newDock }),
+                  push(ref(database, `notificacoesFMO/${id}`), notificacao)
+                ]);
+              } catch (error) {
                 console.error("Erro ao atualizar doca ou enviar notificação:", error);
                 alert("Erro ao atualizar doca: " + error.message);
-              });
+              }
             };
             docaCell.classList.add("p-3");
             docaCell.appendChild(select);
@@ -550,9 +531,7 @@
             btnStatus.innerHTML = `<i class="${
               r.status === "Descarga finalizada" ? "fas fa-check-circle" : "fas fa-sync"
             } mr-1"></i>${r.status || statuses[0]}`;
-            if (r.status === "Descarga finalizada") {
-              btnStatus.disabled = true;
-            }
+            btnStatus.disabled = !r.notificado || r.status === "Descarga finalizada";
             btnStatus.onclick = () => trocaStatus(id, btnStatus);
             statusCell.appendChild(btnStatus);
 
@@ -560,34 +539,43 @@
             const btn = document.createElement("button");
             btn.className = "bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition w-full text-sm";
             btn.innerHTML = '<i class="fas fa-bell mr-1"></i>Notificar';
-            btn.onclick = () => {
-              const docaSelecionada = select.value;
-              if (!docaSelecionada) {
-                alert("Selecione a doca antes de notificar.");
-                return;
-              }
+            btn.onclick = async () => {
               if (!r.placa) {
                 alert("Placa do veículo não informada.");
                 return;
               }
+              const availableDock = await getAvailableDock();
+              if (!availableDock) {
+                alert("Nenhuma doca disponível. Aguarde até que uma doca esteja livre.");
+                return;
+              }
+              select.value = availableDock;
               const notificacao = {
                 motorista: r.motorista,
                 fmo: r.fmo,
                 placa: r.placa,
-                doca: docaSelecionada,
-                mensagem: `Informe CDC Barueri: Dirija-se à Doca ${docaSelecionada}`,
+                doca: availableDock,
+                mensagem: `Informe CDC Barueri: Dirija-se à Doca ${availableDock}`,
                 dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
               };
-              push(ref(database, `notificacoesFMO/${id}`), notificacao).then(() => {
+              try {
+                await Promise.all([
+                  push(ref(database, `notificacoesFMO/${id}`), notificacao),
+                  update(ref(database, `registrosFMO/${id}`), { 
+                    docaSelecionada: availableDock,
+                    notificado: true 
+                  })
+                ]);
+                btnStatus.disabled = false;
                 alert("Notificação enviada para a sala de espera!");
-              }).catch(error => {
+              } catch (error) {
                 console.error("Erro ao enviar notificação:", error);
                 alert("Erro ao enviar notificação: " + error.message);
-              });
+              }
             };
             notificarCell.classList.add("p-3");
             notificarCell.appendChild(btn);
-          });
+          }
           updateSummary();
         });
       }
@@ -615,14 +603,45 @@
           const link = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
           window.open(link, "_blank");
 
+          update(ref(database, 'config'), {
+            lastReportTimestamp: new Date().toISOString()
+          });
+
           Object.keys(registros).forEach(id => {
             if (registros[id].status === "Descarga finalizada") {
               remove(ref(database, `registrosFMO/${id}`)).catch(error => {
                 console.error("Erro ao remover registro:", error);
               });
+              remove(ref(database, `notificacoesFMO/${id}`)).catch(error => {
+                console.error("Erro ao remover notificações:", error);
+              });
             }
           });
         }, { onlyOnce: true });
+      }
+
+      function checkAndClearRecords() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        if (hours === 7 && minutes === 0) {
+          onValue(ref(database, 'config'), snapshot => {
+            const config = snapshot.val() || {};
+            const lastReport = config.lastReportTimestamp ? new Date(config.lastReportTimestamp) : null;
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            if (!lastReport || lastReport < yesterday) {
+              remove(ref(database, 'registrosFMO')).then(() => {
+                remove(ref(database, 'notificacoesFMO')).catch(error => {
+                  console.error("Erro ao limpar notificações:", error);
+                });
+                console.log("Registros e notificações limpos às 07:00.");
+              }).catch(error => {
+                console.error("Erro ao limpar registros:", error);
+              });
+            }
+          }, { onlyOnce: true });
+        }
       }
 
       function exportarPDF() {
@@ -682,6 +701,8 @@
       btnRelatorioGeral.addEventListener('click', enviarRelatorioGeral);
       btnExportarPDF.addEventListener('click', exportarPDF);
       populateTable();
+
+      setInterval(checkAndClearRecords, 60000); // Verifica a cada minuto
     });
   </script>
 </body>
