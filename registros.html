@@ -72,7 +72,7 @@
       color: #dc2626;
       font-weight: 500;
     }
-    .valid-address {
+    .Valid-address {
       color: #16a34a;
       font-weight: 500;
     }
@@ -146,7 +146,9 @@
       background: linear-gradient(to right, #1e40af, #3b82f6);
       color: white;
       padding: 1.5rem 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 6px
+
+ rgba(0,0,0,0.1);
     }
     .summary-box {
       background: white;
@@ -318,6 +320,7 @@
             <p><strong class="font-medium"><i class="fas fa-truck mr-1"></i>Placa:</strong> ${record.placa}</p>
             <p><strong class="font-medium"><i class="fas fa-clock mr-1"></i>Data e Hora:</strong> ${record.dataHora}</p>
             <p><strong class="font-medium"><i class="fas fa-map-marker-alt mr-1"></i>Endereço:</strong> ${record.enderecoCompleto || "Sem endereço"}</p>
+            <p><strong class="font-medium"><i class="fas fa-dolly-flatbed mr-1"></i>Doca:</strong> ${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "Não informada"}</p>
             <img src="${record.imagem}" alt="Foto do registro" class="mt-2" />
           </div>
         `;
@@ -489,37 +492,8 @@
             imgCell.appendChild(img);
 
             const docaCell = row.insertCell(7);
-            const select = document.createElement("select");
-            select.classList.add("p-2", "border", "border-gray-300", "rounded-lg", "w-full", "bg-white", "focus:ring-2", "focus:ring-blue-500", "text-sm");
-            ["", ...docks].forEach(opt => {
-              const option = document.createElement("option");
-              option.value = opt;
-              option.text = opt ? `Doca ${opt}` : "Selecionar";
-              if (r.docaSelecionada === opt) option.selected = true;
-              select.appendChild(option);
-            });
-            select.onchange = async () => {
-              const newDock = select.value;
-              const notificacao = {
-                motorista: r.motorista,
-                fmo: r.fmo,
-                placa: r.placa,
-                doca: newDock,
-                mensagem: newDock ? `Você foi direcionado à Doca ${newDock}` : "Doca removida",
-                dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-              };
-              try {
-                await Promise.all([
-                  update(ref(database, `registrosFMO/${id}`), { docaSelecionada: newDock }),
-                  push(ref(database, `notificacoesFMO/${id}`), notificacao)
-                ]);
-              } catch (error) {
-                console.error("Erro ao atualizar doca ou enviar notificação:", error);
-                alert("Erro ao atualizar doca: " + error.message);
-              }
-            };
             docaCell.classList.add("p-3");
-            docaCell.appendChild(select);
+            docaCell.textContent = r.docaSelecionada ? `Doca ${r.docaSelecionada}` : "Não informada";
 
             const statusCell = row.insertCell(8);
             statusCell.classList.add("p-3");
@@ -549,7 +523,6 @@
                 alert("Nenhuma doca disponível. Aguarde até que uma doca esteja livre.");
                 return;
               }
-              select.value = availableDock;
               const notificacao = {
                 motorista: r.motorista,
                 fmo: r.fmo,
@@ -566,6 +539,7 @@
                     notificado: true 
                   })
                 ]);
+                docaCell.textContent = `Doca ${availableDock}`; // Atualiza a célula da doca
                 btnStatus.disabled = false;
                 alert("Notificação enviada para a sala de espera!");
               } catch (error) {
@@ -674,7 +648,7 @@
                       r.fmo || 'Não informado',
                       r.placa || 'Não informada',
                       r.dataHora || 'Não informada',
-                      r.docaSelecionada || 'Não informada',
+                      r.docaSelecionada ? `Doca ${r.docaSelecionada}` : 'Não informada',
                       r.status || statuses[0]
                     ])
                   ]
