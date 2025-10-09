@@ -1,118 +1,118 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadastro D2D - CDC Barueri</title>
-  <link rel="shortcut icon" href="./img/logo1.ico" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background-color: #f9fafb;
-      margin: 0;
-      padding: 0;
     }
     video, canvas {
       width: 100%;
       max-width: 400px;
-      border-radius: 0.75rem;
+      border-radius: 0.5rem;
       border: 1px solid #e5e7eb;
-      margin: 1.5rem auto;
-      display: block;
-    }
-    .camera-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      margin-top: 1.5rem;
-      transition: all 0.3s ease;
-    }
-    .camera-container.centered {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 100;
-      background-color: rgba(255, 255, 255, 0.9);
-      padding: 1rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      margin-top: 1rem;
     }
     .button-container {
       display: flex;
       justify-content: center;
-      gap: 1.5rem;
-      margin-top: 1.5rem;
-      position: relative;
-      z-index: 10;
+      gap: 1rem;
+      margin-top: 1rem;
     }
     .round-button {
+      width: 3.5rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .floating-button {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
       width: 4rem;
       height: 4rem;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 9999px;
-      font-size: 1.5rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      transition: transform 0.2s ease, background-color 0.2s ease;
-    }
-    .round-button:hover {
-      transform: scale(1.05);
-    }
-    .floating-button {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      width: 4.5rem;
-      height: 4.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 9999px;
-      background-color: #1e40af;
+      background-color: #2563eb;
       color: white;
-      font-size: 1.75rem;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-      transition: background-color 0.2s ease, transform 0.2s ease;
-      z-index: 50;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      transition: background-color 0.2s ease;
+      z-index: 30;
     }
     .floating-button:hover {
-      background-color: #1e3a8a;
-      transform: scale(1.1);
+      background-color: #1e40af;
     }
     .header {
-      background: linear-gradient(to right, #1e3a8a, #3b82f6);
+      background: linear-gradient(to right, #1e40af, #3b82f6);
       color: white;
-      padding: 1.5rem 2rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .input-group label {
       display: block;
-      font-weight: 600;
-      color: #1f2937;
-      margin-bottom: 0.5rem;
-      font-size: 1rem;
-    }
-    .input-group input {
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-    .input-group input:focus {
-      border-color: #1e40af;
-      box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.2);
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.25rem;
     }
     .spinner {
       display: none;
       border: 4px solid #f3f3f3;
-      border-top: 4px solid #1e40af;
+      border-top: 4px solid #3498db;
       border-radius: 50%;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       animation: spin 1s linear infinite;
-      margin-left: 0.75rem;
+      margin-left: 0.5rem;
     }
     .modal {
       display: none;
@@ -121,7 +121,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.6);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -129,41 +129,11 @@
     }
     .modal-content {
       background: white;
-      padding: 2rem;
+      padding: 1.5rem;
       max-width: 90%;
-      width: 500px;
-      border-radius: 1rem;
-      box-shadow: 0 12px 20px rgba(0,0,0,0.25);
-      overflow-y: auto;
-      max-height: 80vh;
-    }
-    .preview-image {
-      width: 100%;
-      max-width: 300px;
+      width: 400px;
       border-radius: 0.75rem;
-      border: 1px solid #e5e7eb;
-      margin: 1rem auto;
-      display: block;
-    }
-    .footer {
-      background-color: #1f2937;
-      color: white;
-      padding: 2rem 0;
-      text-align: center;
-      margin-top: auto;
-    }
-    .footer a {
-      color: #3b82f6;
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-    .footer a:hover {
-      color: #60a5fa;
-    }
-    .logo {
-      max-width: 150px;
-      margin: 0 auto 2rem;
-      display: block;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.2);
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
@@ -175,89 +145,73 @@
     }
     @media (max-width: 640px) {
       .round-button {
-        width: 3.5rem;
-        height: 3.5rem;
-        font-size: 1.25rem;
+        width: 3rem;
+        height: 3rem;
+        font-size: 1rem;
       }
       video, canvas {
         max-width: 100%;
       }
       .header {
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1rem;
       }
       .floating-button {
-        width: 4rem;
-        height: 4rem;
-        font-size: 1.5rem;
+        width: 3.5rem;
+        height: 3.5rem;
+        font-size: 1.25rem;
       }
       .modal-content {
         width: 95%;
-        padding: 1.5rem;
-      }
-      .logo {
-        max-width: 120px;
-      }
-      .footer {
-        padding: 1.5rem 0;
+        padding: 1rem;
       }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="bg-gray-50 min-h-screen">
   <header class="header">
-    <div class="max-w-7xl mx-auto flex items-center gap-4">
-      <i class="fas fa-camera text-3xl"></i>
-      <h1 class="text-3xl font-extrabold tracking-tight">Cadastro D2D - CDC Barueri</h1>
+    <div class="max-w-7xl mx-auto flex items-center gap-3">
+      <i class="fas fa-camera text-2xl"></i>
+      <h1 class="text-2xl font-bold">Cadastro D2D - CDC Barueri</h1>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-4 sm:p-8 flex-grow">
-    <img src="./img/logo2.png" alt="CDC Barueri Logo" class="logo">
-    <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-auto" style="
-    width: 1264px;
-">
-      <form id="registroForm" class="space-y-6">
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 mt-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-auto">
+      <form id="registroForm" class="space-y-4">
         <div class="input-group">
-          <label for="motorista" class="flex items-center gap-2"><i class="fas fa-user"></i>Nome do Motorista</label>
+          <label for="motorista"><i class="fas fa-user mr-1"></i>Nome do Motorista</label>
           <input type="text" id="motorista" placeholder="Digite o nome do motorista" required
-                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div class="input-group">
-          <label for="telefone" class="flex items-center gap-2"><i class="fas fa-phone"></i>Telefone</label>
+          <label for="telefone"><i class="fas fa-phone mr-1"></i>Telefone</label>
           <input type="tel" id="telefone" placeholder="11999999999" required
-                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div class="input-group">
-          <label for="fmo" class="flex items-center gap-2"><i class="fas fa-file-alt"></i>FM-O do Motorista</label>
+          <label for="fmo"><i class="fas fa-file-alt mr-1"></i>FM-O do Motorista</label>
           <input type="text" id="fmo" placeholder="Digite o FM-OXXXCDC" required
-                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div class="input-group">
-          <label for="placa" class="flex items-center gap-2"><i class="fas fa-truck"></i>Placa do Carro</label>
+          <label for="placa"><i class="fas fa-truck mr-1"></i>Placa do Carro</label>
           <input type="text" id="placa" placeholder="ABC1234 ou ABC1D23" required
-                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                 class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
-        <div class="camera-container" id="cameraContainer">
-          <video id="video" autoplay playsinline class="hidden"></video>
-          <canvas id="canvas" class="hidden"></canvas>
-          <div class="button-container">
-            <button type="button" id="btnTirarFoto" class="round-button bg-blue-600 text-white hover:bg-blue-700">
-              <i class="fas fa-camera"></i>
-            </button>
-            <button type="button" id="btnVerRegistros" class="round-button bg-gray-600 text-white hover:bg-gray-700 hidden">
-              <i class="fas fa-clipboard"></i>
-            </button>
-          </div>
+        <video id="video" autoplay playsinline class="hidden"></video>
+        <div class="button-container">
+          <button type="button" id="btnTirarFoto" class="round-button bg-blue-600 text-white hover:bg-blue-700 transition">
+            <i class="fas fa-camera"></i>
+          </button>
+          <button type="button" id="btnVerRegistros" class="round-button bg-gray-600 text-white hover:bg-gray-700 transition hidden">
+            <i class="fas fa-clipboard"></i>
+          </button>
         </div>
+        <canvas id="canvas" class="hidden"></canvas>
       </form>
     </div>
   </main>
-
-  <footer class="footer">
-    <p>© 2025 Sistema de Bloqueio CDC. Todos os direitos reservados.</p>
-    <p>Desenvolvido por <a href="mailto:ericlm.evo@gmail.com">ERICLM.EVO</a></p>
-  </footer>
 
   <button id="btnSalaEspera" class="floating-button" title="Acessar Sala de Espera">
     <i class="fas fa-clock"></i>
@@ -265,72 +219,22 @@
 
   <div id="modalConfirmar" class="modal">
     <div class="modal-content">
-      <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-question-circle"></i>Confirmar Salvamento</h3>
-      <p class="text-gray-600 mb-4">Prévia da foto:</p>
-      <img id="previewImage" class="preview-image" src="" alt="Prévia da Foto">
-      <p class="text-gray-600 mb-6">Deseja salvar as informações?</p>
-      <div class="flex justify-end gap-3">
-        <button id="btnRetomarFoto" class="bg-yellow-600 text-white px-5 py-2.5 rounded-lg hover:bg-yellow-700 transition flex items-center gap-2">
-          <i class="fas fa-redo"></i>Retomar Foto
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-question-circle mr-2"></i>Confirmar Salvamento</h3>
+      <p class="text-gray-700 mb-4">Deseja salvar as informações?</p>
+      <div class="flex justify-end gap-2">
+        <button id="btnCancelarModal" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+          <i class="fas fa-times mr-2"></i>Cancelar
         </button>
-        <button id="btnCancelarModal" class="bg-gray-600 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
-          <i class="fas fa-times"></i>Cancelar
-        </button>
-        <button id="btnConfirmarModal" class="bg-green-700 text-white px-5 py-2.5 rounded-lg hover:bg-green-800 transition flex items-center gap-2">
-          <i class="fas fa-check"></i>Salvar
+        <button id="btnConfirmarModal" class="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition flex items-center gap-2 text-lg shadow-md">
+          <i class="fas fa-check mr-2"></i>Salvar
           <span id="spinnerModal" class="spinner"></span>
         </button>
       </div>
     </div>
   </div>
 
-  <div id="modalGeolocation" class="modal">
-    <div class="modal-content">
-      <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i>Geolocalização Necessária</h3>
-      <p class="text-gray-600 mb-6">A geolocalização é obrigatória para prosseguir. Ative-a nas configurações do seu dispositivo. Não ativar pode resultar em penalidades.</p>
-      <div class="flex justify-end gap-3">
-        <button id="btnTentarNovamente" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
-          <i class="fas fa-redo"></i>Tentar Novamente
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var gk_isXlsx = false;
-    var gk_xlsxFileLookup = {};
-    var gk_fileData = {};
-    function filledCell(cell) {
-      return cell !== '' && cell != null;
-    }
-    function loadFileData(filename) {
-      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-        try {
-          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-          var firstSheetName = workbook.SheetNames[0];
-          var worksheet = workbook.Sheets[firstSheetName];
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          var filteredData = jsonData.filter(row => row.some(filledCell));
-          var headerRowIndex = filteredData.findIndex((row, index) =>
-            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-          );
-          if (headerRowIndex === -1 || headerRowIndex > 25) {
-            headerRowIndex = 0;
-          }
-          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-          return csv;
-        } catch (e) {
-          console.error(e);
-          return "";
-        }
-      }
-      return gk_fileData[filename] || "";
-    }
-  </script>
   <script type="module">
     import { database, ref, push } from './firebase-config.js';
-    import { checkAdminPassword } from './bd.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       console.log("Firebase database:", database);
@@ -344,17 +248,9 @@
       const btnVerRegistros = document.getElementById('btnVerRegistros');
       const btnSalaEspera = document.getElementById('btnSalaEspera');
       const modalConfirmar = document.getElementById('modalConfirmar');
-      const modalGeolocation = document.getElementById('modalGeolocation');
       const btnConfirmarModal = document.getElementById('btnConfirmarModal');
       const btnCancelarModal = document.getElementById('btnCancelarModal');
-      const btnRetomarFoto = document.getElementById('btnRetomarFoto');
-      const btnTentarNovamente = document.getElementById('btnTentarNovamente');
       const spinnerModal = document.getElementById('spinnerModal');
-      const cameraContainer = document.getElementById('cameraContainer');
-      const previewImage = document.getElementById('previewImage');
-
-      // Check admin password on load
-      checkAdminPassword();
 
       // Evento para o botão Sala de Espera
       btnSalaEspera.addEventListener('click', () => {
@@ -370,60 +266,29 @@
         return motorista && telefone && fmo && placa;
       }
 
-      async function checkGeolocationPermission() {
-        try {
-          const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
-          });
-          return { latitude: pos.coords.latitude.toFixed(6), longitude: pos.coords.longitude.toFixed(6) };
-        } catch (err) {
-          console.warn("Erro na geolocalização:", err);
-          modalGeolocation.style.display = 'flex';
-          return null;
-        }
-      }
-
-      btnTentarNovamente.addEventListener('click', async () => {
-        modalGeolocation.style.display = 'none';
-        const coords = await checkGeolocationPermission();
-        if (coords) {
-          // Prosseguir com a captura da foto
-          startCamera();
-        }
-      });
-
-      async function startCamera() {
-        console.log("Iniciando câmera...");
-        // Centralizar camera-container
-        cameraContainer.classList.add('centered');
-        video.classList.remove('hidden');
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-          video.srcObject = stream;
-          video.play();
-          console.log("Câmera iniciada com sucesso");
-          video.oncanplay = () => {
-            console.log("Vídeo pronto para captura");
-            setTimeout(tirarFoto, 2000);
-          };
-        } catch (err) {
-          console.error("Erro ao acessar câmera:", err);
-          alert("Erro ao acessar câmera: " + err.message);
-          video.classList.add('hidden');
-          cameraContainer.classList.remove('centered');
-        }
-      }
-
-      btnTirarFoto.onclick = async () => {
+      btnTirarFoto.onclick = () => {
         if (!camposPreenchidos()) {
           alert("Por favor, preencha todos os campos antes de tirar a foto.");
           return;
         }
 
-        const coords = await checkGeolocationPermission();
-        if (coords) {
-          startCamera();
-        }
+        console.log("Iniciando câmera...");
+        video.classList.remove('hidden');
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+          .then(stream => {
+            video.srcObject = stream;
+            video.play();
+            console.log("Câmera iniciada com sucesso");
+            video.oncanplay = () => {
+              console.log("Vídeo pronto para captura");
+              setTimeout(tirarFoto, 2000);
+            };
+          })
+          .catch(err => {
+            console.error("Erro ao acessar câmera:", err);
+            alert("Erro ao acessar câmera: " + err.message);
+            video.classList.add('hidden');
+          });
       };
 
       function tirarFoto() {
@@ -432,7 +297,6 @@
           console.error("Câmera não pronta: videoWidth ou videoHeight é 0");
           alert("A câmera ainda não está pronta, tente novamente.");
           video.classList.add('hidden');
-          cameraContainer.classList.remove('centered');
           return;
         }
 
@@ -440,9 +304,7 @@
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         console.log("Foto capturada com sucesso");
-        const imageDataUrl = canvas.toDataURL("image/png");
-        previewImage.src = imageDataUrl;
-        canvas.classList.add('hidden');
+        canvas.classList.remove('hidden');
         video.classList.add('hidden');
 
         if (video.srcObject) {
@@ -451,9 +313,9 @@
           console.log("Stream da câmera encerrado");
         }
 
-        console.log("Abrindo modal de confirmação com prévia");
+        // Abrir modal de confirmação após tirar a foto
+        console.log("Abrindo modal de confirmação");
         modalConfirmar.style.display = 'flex';
-        cameraContainer.classList.remove('centered');
       }
 
       btnVerRegistros.addEventListener('click', () => {
@@ -461,28 +323,18 @@
         window.open("registros.html", "_blank");
       });
 
+      // Fechar modal ao clicar em Cancelar
       btnCancelarModal.addEventListener('click', () => {
         console.log("Botão Cancelar clicado");
         modalConfirmar.style.display = 'none';
-        previewImage.src = '';
       });
 
-      btnRetomarFoto.addEventListener('click', async () => {
-        console.log("Botão Retomar Foto clicado");
-        modalConfirmar.style.display = 'none';
-        previewImage.src = '';
-        const coords = await checkGeolocationPermission();
-        if (coords) {
-          startCamera();
-        }
-      });
-
+      // Confirmar salvamento no modal
       btnConfirmarModal.addEventListener('click', async () => {
         console.log("Botão Salvar (modal) clicado");
         spinnerModal.style.display = 'inline-block';
         btnConfirmarModal.disabled = true;
         btnCancelarModal.disabled = true;
-        btnRetomarFoto.disabled = true;
 
         const motorista = document.getElementById("motorista").value.trim();
         const telefone = document.getElementById("telefone").value.trim();
@@ -492,19 +344,20 @@
 
         console.log("Dados do formulário:", { motorista, telefone, fmo, placa, dataHora });
 
-        const coords = await checkGeolocationPermission();
-        if (!coords) {
-          spinnerModal.style.display = 'none';
-          btnConfirmarModal.disabled = false;
-          btnCancelarModal.disabled = false;
-          btnRetomarFoto.disabled = false;
-          modalConfirmar.style.display = 'none';
-          return;
+        let latitude = '', longitude = '';
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+          });
+          latitude = pos.coords.latitude.toFixed(6);
+          longitude = pos.coords.longitude.toFixed(6);
+          console.log("Geolocalização obtida:", { latitude, longitude });
+        } catch (err) {
+          console.warn("Erro na geolocalização:", err);
+          alert("Localização não permitida. O registro será salvo sem coordenadas.");
         }
 
-        const { latitude, longitude } = coords;
-
-        const imagemBase64 = previewImage.src;
+        const imagemBase64 = canvas.toDataURL("image/png");
         const novoRegistro = {
           motorista,
           telefone,
@@ -527,7 +380,7 @@
           console.log("Registro salvo com sucesso no Firebase");
           alert("Registro salvo com sucesso! Redirecionando para a sala de espera...");
           document.getElementById("registroForm").reset();
-          previewImage.src = '';
+          canvas.classList.add('hidden');
           modalConfirmar.style.display = 'none';
           window.location.href = "sala_espera.html";
         } catch (error) {
@@ -536,9 +389,19 @@
           spinnerModal.style.display = 'none';
           btnConfirmarModal.disabled = false;
           btnCancelarModal.disabled = false;
-          btnRetomarFoto.disabled = false;
         }
       });
+
+      window.onload = function () {
+        const senha = prompt("Digite a senha de administrador para acesso total:");
+        console.log("Senha digitada:", senha);
+        if (senha === "Evo@0101") {
+          console.log("Senha correta, mostrando botão Ver Registros");
+          btnVerRegistros.classList.remove("hidden");
+        } else {
+          console.log("Senha incorreta");
+        }
+      };
     });
   </script>
 </body>
