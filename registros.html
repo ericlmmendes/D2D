@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Registros D2D - CDC Barueri</title>
+  <link rel="shortcut icon" href="./img/logo1.ico" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -12,7 +13,25 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f3f4f6;
+      background-color: #f9fafb;
+    }
+    .header {
+      background: linear-gradient(to right, #1e3a8a, #3b82f6);
+      color: white;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .logo {
+      max-width: 200px;
+      margin: 0 auto 2rem;
+      display: block;
+    }
+    .summary-box {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
     }
     table {
       width: 100%;
@@ -20,18 +39,18 @@
       border-spacing: 0;
       border-radius: 0.75rem;
       overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     th, td {
-      padding: 1rem;
+      padding: 1rem 1.5rem;
       text-align: left;
+      font-size: 0.95rem;
     }
     th {
-      background: #1e40af;
+      background: #1e3a8a;
       color: white;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      font-size: 0.875rem;
       letter-spacing: 0.05em;
     }
     td {
@@ -51,11 +70,16 @@
       object-fit: cover;
       border-radius: 0.25rem;
       cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    img.table-img:hover {
+      transform: scale(1.05);
     }
     .status-btn {
       width: 160px;
       font-size: 0.875rem;
       padding: 0.5rem;
+      border-radius: 0.5rem;
       transition: all 0.2s ease;
     }
     .status-btn.aguardando {
@@ -72,15 +96,20 @@
       color: #dc2626;
       font-weight: 500;
     }
-    .Valid-address {
+    .valid-address {
       color: #16a34a;
       font-weight: 500;
+    }
+    .penalidade-aplicada {
+      color: #dc2626;
+      font-weight: 600;
     }
     .cep-link {
       color: #2563eb;
       cursor: pointer;
       text-decoration: underline;
       font-weight: 500;
+      transition: color 0.2s ease;
     }
     .cep-link:hover {
       color: #1e40af;
@@ -100,12 +129,11 @@
     }
     .modal-content {
       background: white;
-      margin: 0 auto;
       padding: 2rem;
       max-width: 90%;
       width: 700px;
-      border-radius: 0.75rem;
-      box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+      border-radius: 1rem;
+      box-shadow: 0 12px 20px rgba(0,0,0,0.25);
       max-height: 90vh;
       overflow-y: auto;
     }
@@ -118,12 +146,12 @@
     }
     .fixed-buttons {
       position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      z-index: 20;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 50;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.25rem;
       align-items: flex-end;
     }
     .fixed-buttons button {
@@ -133,29 +161,29 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
       transition: transform 0.2s ease, background-color 0.2s ease;
     }
     .fixed-buttons button:hover {
       transform: scale(1.1);
     }
     .fixed-buttons button i {
-      font-size: 1.5rem;
+      font-size: 1.75rem;
     }
-    .header {
-      background: linear-gradient(to right, #1e40af, #3b82f6);
+    .footer {
+      background-color: #1f2937;
       color: white;
-      padding: 1.5rem 2rem;
-      box-shadow: 0 4px 6px
-
- rgba(0,0,0,0.1);
+      padding: 2rem 0;
+      text-align: center;
+      margin-top: 3rem;
     }
-    .summary-box {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      margin-bottom: 1.5rem;
+    .footer a {
+      color: #3b82f6;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .footer a:hover {
+      color: #60a5fa;
     }
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -163,8 +191,8 @@
     }
     @media (max-width: 640px) {
       th, td {
-        padding: 0.75rem;
-        font-size: 0.8rem;
+        padding: 0rem;
+        font-size: 0.85rem;
       }
       .status-btn {
         width: 140px;
@@ -172,49 +200,59 @@
       }
       .modal-content {
         width: 95%;
-        padding: 1.25rem;
+        padding: 1.5rem;
       }
       .fixed-buttons {
-        bottom: 1rem;
-        right: 1rem;
+        bottom: 1.5rem;
+        right: 1.5rem;
       }
       .fixed-buttons button {
         width: 50px;
         height: 50px;
       }
       .fixed-buttons button i {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
+      }
+      .summary-box {
+        padding: 1.5rem;
+      }
+      .logo {
+        max-width: 120px;
+      }
+      .footer {
+        padding: 1.5rem 0;
       }
     }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="min-h-screen flex flex-col">
   <header class="header">
-    <div class="max-w-7xl mx-auto flex items-center gap-3">
-      <i class="fas fa-clipboard text-2xl"></i>
-      <h1 class="text-2xl font-bold">Registros D2D - CDC Barueri</h1>
+    <div class="max-w-none mx-auto flex items-center gap-4">
+      <i class="fas fa-clipboard text-3xl"></i>
+      <h1 class="text-3xl font-extrabold tracking-tight">Registros D2D - CDC Barueri</h1>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-4 sm:p-6 mt-8">
-    <div class="summary-box">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-chart-bar mr-2"></i>Resumo</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="p-4 bg-blue-50 rounded-lg">
-          <p class="text-sm text-gray-600">Descargas Finalizadas</p>
-          <p id="countFinalizadas" class="text-5xl font-bold text-blue-600">0</p>
+  <main class="max-w-none mx-auto p-4 sm:p-8 flex-grow">
+    <img src="./img/logo1.ico" alt="CDC Barueri Logo" class="logo">
+    <div class="summary-box w-full">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-bar"></i>Resumo</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="p-5 bg-blue-50 rounded-lg transition hover:shadow-md">
+          <p class="text-sm font-medium text-gray-600">Descargas Finalizadas</p>
+          <p id="countFinalizadas" class="text-5xl font-bold text-blue-600 mt-2">0</p>
         </div>
-        <div class="p-4 bg-yellow-50 rounded-lg">
-          <p class="text-sm text-gray-600">Aguardando Descarregamento</p>
-          <p id="countAguardando" class="text-5xl font-bold text-yellow-600">0</p>
+        <div class="p-5 bg-yellow-50 rounded-lg transition hover:shadow-md">
+          <p class="text-sm font-medium text-gray-600">Aguardando Descarregamento</p>
+          <p id="countAguardando" class="text-5xl font-bold text-yellow-600 mt-2">0</p>
         </div>
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg p-3">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full">
       <div class="fixed-buttons">
-        <button id="btnRelatorioGeral" class="bg-blue-600 text-white hover:bg-blue-700" title="Enviar Relatório Geral">
-          <i class="fas fa-file-export"></i>
+        <button id="btnRelatorioGeral" class="bg-blue-600 text-white hover:bg-blue-700" title="Deletar Informação">
+          <i class="fa fa-trash" aria-hidden="true"></i>
         </button>
         <button id="btnExportarPDF" class="bg-green-600 text-white hover:bg-green-700" title="Exportar PDF">
           <i class="fas fa-file-pdf"></i>
@@ -225,16 +263,17 @@
         <table class="min-w-full">
           <thead>
             <tr>
-              <th><i class=""></i> Motorista</th>
-              <th><i class=""></i> Telefone</th>
-              <th><i class=""></i> FMO</th>
-              <th><i class=""></i> Placa</th>
-              <th><i class=""></i> Data e Hora</th>
-              <th><i class=""></i> Local (CEP)</th>
-              <th><i class=""></i> Foto</th>
-              <th><i class=""></i> Doca</th>
-              <th><i class=""></i> Status</th>
-              <th><i class=""></i> Notificar</th>
+              <th>Motorista</th>
+              <th>Telefone</th>
+              <th>FMO</th>
+              <th>Placa</th>
+              <th>Data e Hora</th>
+              <th>Local (CEP)</th>
+              <th>Foto</th>
+              <th>Doca</th>
+              <th>Status</th>
+              <th>Notificar</th>
+              <th>Penalidade</th>
             </tr>
           </thead>
           <tbody id="tabelaRegistros"></tbody>
@@ -243,11 +282,16 @@
     </div>
   </main>
 
+  <footer class="footer">
+    <p>© 2025 Sistema D2D - Fila de Descaregamento CDC Barueri. Todos os direitos reservados.</p>
+    <p>Desenvolvido por <a href="mailto:ericlm.evo@gmail.com">ERICLM.EVO</a></p>
+  </footer>
+
   <div id="modal" class="modal">
     <div class="modal-content">
-      <h3 class="text-2xl font-semibold text-gray-800 mb-4"><i class="fas fa-info-circle mr-2"></i>Detalhes do Registro</h3>
-      <div id="modal-body" class="space-y-3 text-gray-700"></div>
-      <button id="btnFecharModal" class="mt-6 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition w-full font-medium"><i class="fas fa-times mr-2"></i>Fechar</button>
+      <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-info-circle"></i>Detalhes do Registro</h3>
+      <div id="modal-body" class="space-y-4 text-gray-700"></div>
+      <button id="btnFecharModal" class="mt-6 bg-gray-600 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition w-full font-medium flex items-center justify-center gap-2"><i class="fas fa-times"></i>Fechar</button>
     </div>
   </div>
 
@@ -313,14 +357,17 @@
 
       function openModal(record) {
         modalBody.innerHTML = `
-          <div class="grid grid-cols-1 gap-3">
-            <p><strong class="font-medium"><i class="fas fa-user mr-1"></i>Motorista:</strong> ${record.motorista}</p>
-            <p><strong class="font-medium"><i class="fas fa-phone mr-1"></i>Telefone:</strong> ${record.telefone}</p>
-            <p><strong class="font-medium"><i class="fas fa-file-alt mr-1"></i>FMO:</strong> ${record.fmo}</p>
-            <p><strong class="font-medium"><i class="fas fa-truck mr-1"></i>Placa:</strong> ${record.placa}</p>
-            <p><strong class="font-medium"><i class="fas fa-clock mr-1"></i>Data e Hora:</strong> ${record.dataHora}</p>
-            <p><strong class="font-medium"><i class="fas fa-map-marker-alt mr-1"></i>Endereço:</strong> ${record.enderecoCompleto || "Sem endereço"}</p>
-            <p><strong class="font-medium"><i class="fas fa-dolly-flatbed mr-1"></i>Doca:</strong> ${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "Não informada"}</p>
+          <div class="grid grid-cols-1 gap-4">
+            <p><span class="font-semibold"><i class="fas fa-user mr-1"></i>Motorista:</span> ${record.motorista}</p>
+            <p><span class="font-semibold"><i class="fas fa-phone mr-1"></i>Telefone:</span> ${record.telefone}</p>
+            <p><span class="font-semibold"><i class="fas fa-file-alt mr-1"></i>FMO:</span> ${record.fmo}</p>
+            <p><span class="font-semibold"><i class="fas fa-truck mr-1"></i>Placa:</span> ${record.placa}</p>
+            <p><span class="font-semibold"><i class="fas fa-clock mr-1"></i>Data e Hora:</span> ${record.dataHora}</p>
+            <p><span class="font-semibold"><i class="fas fa-map-marker-alt mr-1"></i>Endereço:</span> ${record.enderecoCompleto || "Sem endereço"}</p>
+            <p><span class="font-semibold"><i class="fas fa-dolly-flatbed mr-1"></i>Doca:</span> ${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "Não informada"}</p>
+            <p><span class="font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>Penalidade:</span> ${
+              record.penalidade ? `${record.penalidade.motivo} (${record.penalidade.dataHora})` : "Nenhuma penalidade aplicada"
+            }</p>
             <img src="${record.imagem}" alt="Foto do registro" class="mt-2" />
           </div>
         `;
@@ -406,7 +453,7 @@
           tabela.innerHTML = "";
           const registros = snapshot.val();
           if (!registros) {
-            tabela.innerHTML = '<tr><td colspan="10" class="text-center p-4 text-gray-600">Nenhum registro encontrado</td></tr>';
+            tabela.innerHTML = '<tr><td colspan="11" class="text-center p-4 text-gray-600">Nenhum registro encontrado</td></tr>';
             updateSummary();
             return;
           }
@@ -417,22 +464,23 @@
             row.classList.add("border-b");
 
             const isValidAddress = r.enderecoCompleto === targetAddress;
+            const hasPenalidade = !!r.penalidade; // Verifica se há penalidade
 
             const motoristaCell = row.insertCell(0);
             motoristaCell.textContent = r.motorista;
-            motoristaCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
+            motoristaCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
 
             const telefoneCell = row.insertCell(1);
             telefoneCell.textContent = r.telefone;
-            telefoneCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
+            telefoneCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
 
             const fmoCell = row.insertCell(2);
             fmoCell.textContent = r.fmo;
-            fmoCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
+            fmoCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
 
             const placaCell = row.insertCell(3);
             placaCell.textContent = r.placa;
-            placaCell.classList.add(isValidAddress ? "valid-address" : "invalid-address");
+            placaCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
 
             row.insertCell(4).textContent = r.dataHora;
 
@@ -452,34 +500,42 @@
                     localCell.innerHTML = `<span class="cep-link">${cep}</span>`;
                     localCell.querySelector(".cep-link").onclick = () => openModal(record);
                     const isValid = endereco === targetAddress;
-                    motoristaCell.classList.add(isValid ? "valid-address" : "invalid-address");
-                    telefoneCell.classList.add(isValid ? "valid-address" : "invalid-address");
-                    fmoCell.classList.add(isValid ? "valid-address" : "invalid-address");
-                    placaCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                    if (!hasPenalidade) { // Aplica apenas se não houver penalidade
+                      motoristaCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                      telefoneCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                      fmoCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                      placaCell.classList.add(isValid ? "valid-address" : "invalid-address");
+                    }
                   }).catch(error => {
                     localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
                     localCell.querySelector(".cep-link").onclick = () => openModal(record);
-                    motoristaCell.classList.add("invalid-address");
-                    telefoneCell.classList.add("invalid-address");
-                    fmoCell.classList.add("invalid-address");
-                    placaCell.classList.add("invalid-address");
+                    if (!hasPenalidade) {
+                      motoristaCell.classList.add("invalid-address");
+                      telefoneCell.classList.add("invalid-address");
+                      fmoCell.classList.add("invalid-address");
+                      placaCell.classList.add("invalid-address");
+                    }
                   });
                 })
                 .catch(() => {
                   localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
                   localCell.querySelector(".cep-link").onclick = () => openModal(record);
-                  motoristaCell.classList.add("invalid-address");
-                  telefoneCell.classList.add("invalid-address");
-                  fmoCell.classList.add("invalid-address");
-                  placaCell.classList.add("invalid-address");
+                  if (!hasPenalidade) {
+                    motoristaCell.classList.add("invalid-address");
+                    telefoneCell.classList.add("invalid-address");
+                    fmoCell.classList.add("invalid-address");
+                    placaCell.classList.add("invalid-address");
+                  }
                 });
             } else {
               localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
               localCell.querySelector(".cep-link").onclick = () => openModal(record);
-              motoristaCell.classList.add("invalid-address");
-              telefoneCell.classList.add("invalid-address");
-              fmoCell.classList.add("invalid-address");
-              placaCell.classList.add("invalid-address");
+              if (!hasPenalidade) {
+                motoristaCell.classList.add("invalid-address");
+                telefoneCell.classList.add("invalid-address");
+                fmoCell.classList.add("invalid-address");
+                placaCell.classList.add("invalid-address");
+              }
             }
 
             const imgCell = row.insertCell(6);
@@ -512,7 +568,7 @@
             const notificarCell = row.insertCell(9);
             const btn = document.createElement("button");
             btn.className = "bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition w-full text-sm";
-            btn.innerHTML = '<i class="fas fa-bell mr-1"></i>Notificar';
+            btn.innerHTML = '<i class="fas fa-bell mr-1"></i>Notificar Motorista';
             btn.onclick = async () => {
               if (!r.placa) {
                 alert("Placa do veículo não informada.");
@@ -539,7 +595,7 @@
                     notificado: true 
                   })
                 ]);
-                docaCell.textContent = `Doca ${availableDock}`; // Atualiza a célula da doca
+                docaCell.textContent = `Doca ${availableDock}`;
                 btnStatus.disabled = false;
                 alert("Notificação enviada para a sala de espera!");
               } catch (error) {
@@ -549,6 +605,68 @@
             };
             notificarCell.classList.add("p-3");
             notificarCell.appendChild(btn);
+
+            const penalidadeCell = row.insertCell(10);
+            penalidadeCell.classList.add("p-3");
+            if (r.penalidade) {
+              penalidadeCell.textContent = `Aplicada: ${r.penalidade.motivo}`;
+              penalidadeCell.classList.add("text-red-600", "font-medium");
+            } else {
+              const btnPenalidade = document.createElement("button");
+              btnPenalidade.className = "bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition w-full text-sm";
+              btnPenalidade.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Aplicar Penalidade';
+              btnPenalidade.onclick = async () => {
+                const motivo = prompt("Digite o motivo da penalidade:");
+                if (!motivo) {
+                  alert("O motivo da penalidade é obrigatório.");
+                  return;
+                }
+                const penalidade = {
+                  motorista: r.motorista,
+                  fmo: r.fmo,
+                  placa: r.placa,
+                  motivo: motivo,
+                  dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+                };
+                const notificacaoSalaEspera = {
+                  motorista: r.motorista,
+                  fmo: r.fmo,
+                  placa: r.placa,
+                  tipo: "penalidade",
+                  mensagem: `Penalidade aplicada: ${motivo}`,
+                  dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+                };
+                try {
+                  await Promise.all([
+                    update(ref(database, `registrosFMO/${id}`), { 
+                      penalidade: {
+                        motivo: motivo,
+                        dataHora: penalidade.dataHora
+                      }
+                    }),
+                    push(ref(database, `notificacoesPenalidades/${id}`), penalidade),
+                    push(ref(database, `notificacoesFMO/${id}`), notificacaoSalaEspera)
+                  ]);
+                  penalidadeCell.textContent = `Aplicada: ${motivo}`;
+                  penalidadeCell.classList.add("text-red-600", "font-medium");
+                  btnPenalidade.remove();
+                  // Atualiza as células para refletir a penalidade
+                  motoristaCell.classList.remove("valid-address", "invalid-address");
+                  telefoneCell.classList.remove("valid-address", "invalid-address");
+                  fmoCell.classList.remove("valid-address", "invalid-address");
+                  placaCell.classList.remove("valid-address", "invalid-address");
+                  motoristaCell.classList.add("penalidade-aplicada");
+                  telefoneCell.classList.add("penalidade-aplicada");
+                  fmoCell.classList.add("penalidade-aplicada");
+                  placaCell.classList.add("penalidade-aplicada");
+                  alert("Penalidade aplicada e notificação enviada para a sala de espera!");
+                } catch (error) {
+                  console.error("Erro ao aplicar penalidade:", error);
+                  alert("Erro ao aplicar penalidade: " + error.message);
+                }
+              };
+              penalidadeCell.appendChild(btnPenalidade);
+            }
           }
           updateSummary();
         });
@@ -559,7 +677,7 @@
           const registros = snapshot.val();
           if (!registros) {
             alert("Nenhum registro encontrado.");
-            tabela.innerHTML = '<tr><td colspan="10" class="text-center p-4">Nenhum registro encontrado</td></tr>';
+            tabela.innerHTML = '<tr><td colspan="11" class="text-center p-4">Nenhum registro encontrado</td></tr>';
             return;
           }
 
@@ -572,7 +690,8 @@
             mensagem += `Hora: ${r.dataHora || 'Não informada'}\n`;
             mensagem += `Endereço: ${r.enderecoCompleto || 'Carregando...'}\n`;
             mensagem += `Doca: ${r.docaSelecionada || 'Não informada'}\n`;
-            mensagem += `Status: ${r.status || statuses[0]}\n\n`;
+            mensagem += `Status: ${r.status || statuses[0]}\n`;
+            mensagem += `Penalidade: ${r.penalidade ? `${r.penalidade.motivo} (${r.penalidade.dataHora})` : 'Nenhuma'}\n\n`;
           });
           const link = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
           window.open(link, "_blank");
@@ -588,6 +707,9 @@
               });
               remove(ref(database, `notificacoesFMO/${id}`)).catch(error => {
                 console.error("Erro ao remover notificações:", error);
+              });
+              remove(ref(database, `notificacoesPenalidades/${id}`)).catch(error => {
+                console.error("Erro ao remover notificações de penalidade:", error);
               });
             }
           });
@@ -605,14 +727,17 @@
             const yesterday = new Date(now);
             yesterday.setDate(now.getDate() - 1);
             if (!lastReport || lastReport < yesterday) {
-              remove(ref(database, 'registrosFMO')).then(() => {
-                remove(ref(database, 'notificacoesFMO')).catch(error => {
-                  console.error("Erro ao limpar notificações:", error);
+              Promise.all([
+                remove(ref(database, 'registrosFMO')),
+                remove(ref(database, 'notificacoesFMO')),
+                remove(ref(database, 'notificacoesPenalidades'))
+              ])
+                .then(() => {
+                  console.log("Registros, notificações e penalidades limpos às 07:00.");
+                })
+                .catch(error => {
+                  console.error("Erro ao limpar dados:", error);
                 });
-                console.log("Registros e notificações limpos às 07:00.");
-              }).catch(error => {
-                console.error("Erro ao limpar registros:", error);
-              });
             }
           }, { onlyOnce: true });
         }
@@ -639,9 +764,9 @@
               {
                 table: {
                   headerRows: 1,
-                  widths: ['*', '*', '*', '*', '*', '*', '*'],
+                  widths: ['*', '*', '*', '*', '*', '*', '*', '*'],
                   body: [
-                    ['Motorista', 'Telefone', 'FMO', 'Placa', 'Data e Hora', 'Doca', 'Status'],
+                    ['Motorista', 'Telefone', 'FMO', 'Placa', 'Data e Hora', 'Doca', 'Status', 'Penalidade'],
                     ...Object.values(registros).map(r => [
                       r.motorista || 'Não informado',
                       r.telefone || 'Não informado',
@@ -649,7 +774,8 @@
                       r.placa || 'Não informada',
                       r.dataHora || 'Não informada',
                       r.docaSelecionada ? `Doca ${r.docaSelecionada}` : 'Não informada',
-                      r.status || statuses[0]
+                      r.status || statuses[0],
+                      r.penalidade ? `${r.penalidade.motivo} (${r.penalidade.dataHora})` : 'Nenhuma'
                     ])
                   ]
                 },
@@ -661,11 +787,11 @@
               }
             ],
             styles: {
-              header: { fontSize: 15, bold: true, margin: [0, 0, 0, 10] },
+              header: { fontSize: 14, bold: true, margin: [0, 0, 0, 10] },
               subheader: { fontSize: 12, italics: true, margin: [0, 0, 0, 20] },
               summary: { fontSize: 12, bold: true, margin: [0, 5, 0, 5] }
             },
-            defaultStyle: { fontSize: 5 }
+            defaultStyle: { fontSize: 10 }
           };
 
           pdfMake.createPdf(docDefinition).download('Relatorio_CDC_Barueri.pdf');
@@ -676,7 +802,7 @@
       btnExportarPDF.addEventListener('click', exportarPDF);
       populateTable();
 
-      setInterval(checkAndClearRecords, 60000); // Verifica a cada minuto
+      setInterval(checkAndClearRecords, 60000);
     });
   </script>
 </body>
