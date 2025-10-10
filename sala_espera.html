@@ -1,53 +1,16 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sala de Espera - CDC Barueri</title>
+  <link rel="shortcut icon" href="./img/logo1.ico" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f9fafb;
     }
     table {
       width: 100%;
@@ -55,6 +18,7 @@
       border-spacing: 0;
       border-radius: 0.5rem;
       overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     th, td {
       padding: 0.75rem 1rem;
@@ -82,18 +46,38 @@
       padding: 1rem 2rem;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+   
+    .logo {
+      max-width: 200px;
+      margin: 0 auto 2rem;
+      display: block;
+    }
     .notification {
-      background: #fefcbf;
-      border-left: 4px solid #d97706;
       padding: 1rem;
       margin-bottom: 1rem;
       border-radius: 0.25rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .notification.standard {
+      background: #fefcbf;
+      border-left: 4px solid #d97706;
+    }
+    .notification.penalidade {
+      background: #fee2e2;
+      border-left: 4px solid #dc2626;
+      color: #dc2626;
+      font-weight: 600;
+    }
+    .penalidade-aplicada {
+      color: #dc2626;
+      font-weight: 600;
     }
     @media (max-width: 640px) {
       th, td {
         padding: 0.5rem;
         font-size: 0.875rem;
       }
+      
     }
   </style>
 </head>
@@ -105,7 +89,8 @@
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-4 sm:p-6 mt EDUCAÇÃO-6">
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 mt-6">
+    <img src="./img/logo1.ico" alt="CDC Barueri Logo" class="logo">
     <div class="bg-white rounded-xl shadow-lg p-6">
       <h2 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-bell mr-2"></i>Notificações</h2>
       <div id="notificacoes" class="space-y-2"></div>
@@ -114,12 +99,12 @@
         <table class="min-w-full">
           <thead>
             <tr>
-              <th><i class=""></i> Motorista</th>
-              <th><i class=""></i> FMO</th>
-              <th><i class=""></i> Placa</th>
-              <th><i class=""></i> Data e Hora</th>
-              <th><i class=""></i> Status</th>
-              <th><i class=""></i> Doca</th>
+              <th><i class="fas fa-user mr-1"></i>Motorista</th>
+              <th><i class="fas fa-file-alt mr-1"></i>FMO</th>
+              <th><i class="fas fa-truck mr-1"></i>Placa</th>
+              <th><i class="fas fa-clock mr-1"></i>Data e Hora</th>
+              <th><i class="fas fa-info-circle mr-1"></i>Status</th>
+              <th><i class="fas fa-dolly-flatbed mr-1"></i>Doca</th>
             </tr>
           </thead>
           <tbody id="tabelaEspera"></tbody>
@@ -162,12 +147,25 @@
             console.log("Adicionando registro à sala de espera:", r);
             const row = tabelaEspera.insertRow();
             row.classList.add("border-b");
-            row.insertCell(0).textContent = r.motorista;
-            row.insertCell(1).textContent = r.fmo;
-            row.insertCell(2).textContent = r.placa;
-            row.insertCell(3).textContent = r.dataHora;
-            row.insertCell(4).textContent = r.status || "Aguardando descarregamento";
-            row.insertCell(5).textContent = r.docaSelecionada || "Não atribuída";
+            const hasPenalidade = !!r.penalidade; // Verifica se há penalidade
+            const cells = [
+              row.insertCell(0), // Motorista
+              row.insertCell(1), // FMO
+              row.insertCell(2), // Placa
+              row.insertCell(3), // Data e Hora
+              row.insertCell(4), // Status
+              row.insertCell(5)  // Doca
+            ];
+            cells[0].textContent = r.motorista || "Não informado";
+            cells[1].textContent = r.fmo || "Não informado";
+            cells[2].textContent = r.placa || "Não informado";
+            cells[3].textContent = r.dataHora || "Não informado";
+            cells[4].textContent = r.status || "Aguardando descarregamento";
+            cells[5].textContent = r.docaSelecionada || "Não atribuída";
+            // Aplica a classe penalidade-aplicada se houver penalidade
+            if (hasPenalidade) {
+              cells.forEach(cell => cell.classList.add("penalidade-aplicada"));
+            }
           });
 
           // Remover notificações de motoristas com status "Descarga finalizada"
@@ -228,11 +226,11 @@
           ultimasNotificacoes.forEach(n => {
             console.log("Adicionando notificação:", n);
             const div = document.createElement("div");
-            div.classList.add("notification");
+            div.classList.add("notification", n.tipo === "penalidade" ? "penalidade" : "standard");
             div.innerHTML = `
-              ${n.motorista} (FMO: ${n.fmo}, Placa: ${n.placa})<br>
+              ${n.motorista || "Não informado"} (FMO: ${n.fmo || "Não informado"}, Placa: ${n.placa || "Não informado"})<br>
               ${n.mensagem || `Status atualizado: ${n.status}`}<br>
-              ${n.dataHora}
+              ${n.dataHora || "Não informado"}
             `;
             notificacoesDiv.appendChild(div);
           });
@@ -246,5 +244,6 @@
       populateNotifications();
     });
   </script>
+  
 </body>
 </html>
