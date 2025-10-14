@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -74,7 +35,6 @@
     }
     .floating-button {
       position: fixed;
-      bottom: 1.5rem;
       right: 1.5rem;
       width: 4rem;
       height: 4rem;
@@ -91,6 +51,12 @@
     }
     .floating-button:hover {
       background-color: #1e40af;
+    }
+    #btnRegistrosFloat {
+      bottom: 6.5rem; /* Positioned above btnSalaEspera */
+    }
+    #btnSalaEspera {
+      bottom: 1.5rem;
     }
     .header {
       background: linear-gradient(to right, #1e40af, #3b82f6);
@@ -135,6 +101,15 @@
       border-radius: 0.75rem;
       box-shadow: 0 10px 15px rgba(0,0,0,0.2);
     }
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .logo-container img {
+      max-width: 200px;
+      height: auto;
+    }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -160,9 +135,18 @@
         height: 3.5rem;
         font-size: 1.25rem;
       }
+      #btnRegistrosFloat {
+        bottom: 5.5rem;
+      }
+      #btnSalaEspera {
+        bottom: 1rem;
+      }
       .modal-content {
         width: 95%;
         padding: 1rem;
+      }
+      .logo-container img {
+        max-width: 150px;
       }
     }
   </style>
@@ -176,6 +160,10 @@
   </header>
 
   <main class="max-w-7xl mx-auto p-4 sm:p-6 mt-6">
+    <!-- Logo Container -->
+    <div class="logo-container">
+      <img src="./img/logo2.png" alt="Logo CDC Barueri" />
+    </div>
     <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-auto">
       <form id="registroForm" class="space-y-4">
         <div class="input-group">
@@ -201,7 +189,7 @@
 
         <video id="video" autoplay playsinline class="hidden"></video>
         <div class="button-container">
-          <button type="button" id="btnTirarFoto" class="round-button bg-blue-600 text-white hover:bg-blue-700 transition">
+          <button type="button" id="btnTirarFoto" class="round-button bg-blue-600 text-white hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
             <i class="fas fa-camera"></i>
           </button>
           <button type="button" id="btnVerRegistros" class="round-button bg-gray-600 text-white hover:bg-gray-700 transition hidden">
@@ -213,10 +201,16 @@
     </div>
   </main>
 
+  <!-- Floating Button for Registros -->
+  <button id="btnRegistrosFloat" class="floating-button" title="Acessar Registros">
+    <i class="fas fa-clipboard"></i>
+  </button>
+  <!-- Floating Button for Sala de Espera -->
   <button id="btnSalaEspera" class="floating-button" title="Acessar Sala de Espera">
     <i class="fas fa-clock"></i>
   </button>
 
+  <!-- Modal for Confirmar Salvamento -->
   <div id="modalConfirmar" class="modal">
     <div class="modal-content">
       <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-question-circle mr-2"></i>Confirmar Salvamento</h3>
@@ -233,8 +227,59 @@
     </div>
   </div>
 
+  <!-- Modal for Geolocation Warning -->
+  <div id="modalGeolocationWarning" class="modal">
+    <div class="modal-content">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4"><i class="fas fa-exclamation-triangle mr-2 text-red-600"></i>Aviso de Geolocalização</h3>
+      <p class="text-gray-700 mb-4">A geolocalização está desativada. Habilite a localização no seu dispositivo para evitar as seguintes penalidades:</p>
+      <ul class="list-disc list-inside text-gray-700 mb-4">
+        <li>Nome em vermelho</li>
+        <li>Descer na fila de descarregamento</li>
+      </ul>
+      <div class="flex justify-end">
+        <button id="btnCloseGeolocationModal" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+          <i class="fas fa-times mr-2"></i>Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+  </script>
+
   <script type="module">
     import { database, ref, push } from './firebase-config.js';
+    import { validateAdminPassword } from './bd.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       console.log("Firebase database:", database);
@@ -247,10 +292,67 @@
       const btnTirarFoto = document.getElementById('btnTirarFoto');
       const btnVerRegistros = document.getElementById('btnVerRegistros');
       const btnSalaEspera = document.getElementById('btnSalaEspera');
+      const btnRegistrosFloat = document.getElementById('btnRegistrosFloat');
       const modalConfirmar = document.getElementById('modalConfirmar');
       const btnConfirmarModal = document.getElementById('btnConfirmarModal');
       const btnCancelarModal = document.getElementById('btnCancelarModal');
       const spinnerModal = document.getElementById('spinnerModal');
+      const modalGeolocationWarning = document.getElementById('modalGeolocationWarning');
+      const btnCloseGeolocationModal = document.getElementById('btnCloseGeolocationModal');
+
+      // Check geolocation permission on page load
+      let isLocationEnabled = false;
+      navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
+        isLocationEnabled = permissionStatus.state === 'granted';
+        btnTirarFoto.disabled = !isLocationEnabled;
+        if (isLocationEnabled) {
+          console.log("Geolocalização já permitida.");
+        } else {
+          console.log("Geolocalização não permitida, mostrando modal de aviso...");
+          modalGeolocationWarning.style.display = 'flex'; // Show warning modal
+          navigator.geolocation.getCurrentPosition(
+            () => {
+              isLocationEnabled = true;
+              btnTirarFoto.disabled = false;
+              modalGeolocationWarning.style.display = 'none'; // Hide modal if enabled
+              console.log("Geolocalização permitida pelo usuário.");
+            },
+            () => {
+              isLocationEnabled = false;
+              btnTirarFoto.disabled = true;
+              console.log("Geolocalização negada ou erro.");
+            }
+          );
+        }
+
+        permissionStatus.onchange = () => {
+          isLocationEnabled = permissionStatus.state === 'granted';
+          btnTirarFoto.disabled = !isLocationEnabled;
+          modalGeolocationWarning.style.display = isLocationEnabled ? 'none' : 'flex';
+          console.log("Estado da geolocalização alterado:", permissionStatus.state);
+        };
+      });
+
+      // Close geolocation warning modal
+      btnCloseGeolocationModal.addEventListener('click', () => {
+        console.log("Botão Fechar (modal geolocalização) clicado");
+        modalGeolocationWarning.style.display = 'none';
+      });
+
+      // Evento para o botão de Registros (floating)
+      btnRegistrosFloat.addEventListener('click', () => {
+        console.log("Botão Registros (floating) clicado");
+        const senha = prompt("Digite a senha de administrador para acessar os registros:");
+        console.log("Senha digitada:", senha);
+        if (validateAdminPassword(senha)) {
+          console.log("Senha correta, abrindo registros.html");
+          btnVerRegistros.classList.remove("hidden"); // Show btnVerRegistros
+          window.open("registros.html", "_blank");
+        } else {
+          console.log("Senha incorreta");
+          alert("Senha de administrador incorreta!");
+        }
+      });
 
       // Evento para o botão Sala de Espera
       btnSalaEspera.addEventListener('click', () => {
@@ -269,6 +371,11 @@
       btnTirarFoto.onclick = () => {
         if (!camposPreenchidos()) {
           alert("Por favor, preencha todos os campos antes de tirar a foto.");
+          return;
+        }
+
+        if (!isLocationEnabled) {
+          alert("A geolocalização está desativada. Habilite a localização no seu dispositivo para prosseguir. Atenção: Não habilitar a localização pode resultar em advertência ou descida na fila.");
           return;
         }
 
@@ -319,7 +426,7 @@
       }
 
       btnVerRegistros.addEventListener('click', () => {
-        console.log("Tentando abrir registros.html");
+        console.log("Tentando abrir registros.html via btnVerRegistros");
         window.open("registros.html", "_blank");
       });
 
@@ -391,17 +498,6 @@
           btnCancelarModal.disabled = false;
         }
       });
-
-      window.onload = function () {
-        const senha = prompt("Digite a senha de administrador para acesso total:");
-        console.log("Senha digitada:", senha);
-        if (senha === "Evo@0101") {
-          console.log("Senha correta, mostrando botão Ver Registros");
-          btnVerRegistros.classList.remove("hidden");
-        } else {
-          console.log("Senha incorreta");
-        }
-      };
     });
   </script>
 </body>
