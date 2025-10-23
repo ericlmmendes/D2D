@@ -46,7 +46,6 @@
       padding: 1rem 2rem;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-   
     .logo {
       max-width: 200px;
       margin: 0 auto 2rem;
@@ -72,12 +71,15 @@
       color: #dc2626;
       font-weight: 600;
     }
+    .express-load {
+      color: #6b7280;
+      font-weight: 600;
+    }
     @media (max-width: 640px) {
       th, td {
         padding: 0.5rem;
         font-size: 0.875rem;
       }
-      
     }
   </style>
 </head>
@@ -102,6 +104,7 @@
               <th><i class="fas fa-user mr-1"></i>Motorista</th>
               <th><i class="fas fa-file-alt mr-1"></i>FMO</th>
               <th><i class="fas fa-truck mr-1"></i>Placa</th>
+              <th><i class="fas fa-boxes mr-1"></i>Qtde. Sacas</th>
               <th><i class="fas fa-clock mr-1"></i>Data e Hora</th>
               <th><i class="fas fa-info-circle mr-1"></i>Status</th>
               <th><i class="fas fa-dolly-flatbed mr-1"></i>Doca</th>
@@ -125,6 +128,25 @@
       const tabelaEspera = document.getElementById("tabelaEspera");
       const notificacoesDiv = document.getElementById("notificacoes");
 
+      const STATUSES = {
+        AGUARDANDO: "Aguardando",
+        EM_DESCARGA: "Em Descarga",
+        FINALIZADA: "Finalizadas"
+      };
+      const LEGACY_STATUSES = {
+        AGUARDANDO: "Aguardando descarregamento",
+        EM_DESCARGA: "Em descarga",
+        FINALIZADA: "Descarga finalizada"
+      };
+
+      const normalizeStatus = (status) => {
+        if (!status) return STATUSES.AGUARDANDO;
+        if (status === LEGACY_STATUSES.AGUARDANDO || status === "Aguardando descarregamento") return STATUSES.AGUARDANDO;
+        if (status === LEGACY_STATUSES.EM_DESCARGA || status === "Em descarga") return STATUSES.EM_DESCARGA;
+        if (status === LEGACY_STATUSES.FINALIZADA || status === "Descarga finalizada") return STATUSES.FINALIZADA;
+        return status;
+      };
+
       function populateWaitingRoom() {
         console.log("Populando sala de espera...");
         onValue(ref(database, 'registrosFMO'), snapshot => {
@@ -133,53 +155,70 @@
           const registros = snapshot.val();
           if (!registros) {
             console.log("Nenhum registro encontrado");
-            tabelaEspera.innerHTML = '<tr><td colspan="6" class="text-center p-4">Nenhum motorista na sala de espera</td></tr>';
+            tabelaEspera.innerHTML = '<tr><td colspan="7" class="text-center p-4">Nenhum motorista na sala de espera</td></tr>';
             return;
           }
 
-          // Ordenar registros por dataHora e filtrar status "Descarga finalizada"
-          const registrosArray = Object.keys(registros)
-            .map(id => ({ id, ...registros[id] }))
-            .filter(r => r.status !== "Descarga finalizada")
+          // Processar registros, aplicar lógica de Carga Express e filtrar status "Finalizadas"
+          const registrosArray = Object.entries(registros)
+            .map(([id, r]) => ({
+              id,
+              ...r,
+              status: normalizeStatus(r.status || STATUSES.AGUARDANDO),
+              quantidadeSacas: parseInt(r.quantidadeSacas || 0),
+              isExpress: parseInt(r.quantidadeSacas || 0) <= 100
+            }))
+            .filter(r => r.status !== STATUSES.FINALIZADA)
             .sort((a, b) => new Date(a.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+)/, '$3-$2-$1 $4')) - new Date(b.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+)/, '$3-$2-$1 $4')));
 
           registrosArray.forEach(r => {
             console.log("Adicionando registro à sala de espera:", r);
             const row = tabelaEspera.insertRow();
             row.classList.add("border-b");
-            const hasPenalidade = !!r.penalidade; // Verifica se há penalidade
+            const hasPenalidade = !!r.penalidade;
             const cells = [
               row.insertCell(0), // Motorista
               row.insertCell(1), // FMO
               row.insertCell(2), // Placa
-              row.insertCell(3), // Data e Hora
-              row.insertCell(4), // Status
-              row.insertCell(5)  // Doca
+              row.insertCell(3), // Qtde. Sacas
+              row.insertCell(4), // Data e Hora
+              row.insertCell(5), // Status
+              row.insertCell(6)  // Doca
             ];
             cells[0].textContent = r.motorista || "Não informado";
             cells[1].textContent = r.fmo || "Não informado";
             cells[2].textContent = r.placa || "Não informado";
-            cells[3].textContent = r.dataHora || "Não informado";
-            cells[4].textContent = r.status || "Aguardando descarregamento";
-            cells[5].textContent = r.docaSelecionada || "Não atribuída";
-            // Aplica a classe penalidade-aplicada se houver penalidade
+            cells[3].innerHTML = `${r.quantidadeSacas} ${r.isExpress ? '<span class="express-load">(Express)</span>' : ''}`;
+            cells[4].textContent = r.dataHora || "Não informado";
+            cells[5].textContent = r.status || STATUSES.AGUARDANDO;
+            cells[6].textContent = r.docaSelecionada ? `Doca ${r.docaSelecionada}` : "Não atribuída";
             if (hasPenalidade) {
               cells.forEach(cell => cell.classList.add("penalidade-aplicada"));
             }
           });
 
-          // Remover notificações de motoristas com status "Descarga finalizada"
-          Object.keys(registros).forEach(id => {
-            if (registros[id].status === "Descarga finalizada") {
-              console.log("Removendo notificações do registro:", id);
-              remove(ref(database, `notificacoesFMO/${id}`)).catch(error => {
-                console.error("Erro ao remover notificações:", error);
+          // Remover registros e notificações com status "Finalizadas"
+          Object.entries(registros).forEach(([id, r]) => {
+            if (normalizeStatus(r.status) === STATUSES.FINALIZADA) {
+              console.log("Removendo registro e notificações para o ID:", id);
+              Promise.all([
+                remove(ref(database, `registrosFMO/${id}`)).catch(error => {
+                  console.error(`Erro ao remover registro ${id}:`, error);
+                }),
+                remove(ref(database, `notificacoesFMO/${id}`)).catch(error => {
+                  console.error(`Erro ao remover notificaçõesFMO ${id}:`, error);
+                }),
+                remove(ref(database, `notificacoesPenalidades/${id}`)).catch(error => {
+                  console.error(`Erro ao remover notificacoesPenalidades ${id}:`, error);
+                })
+              ]).then(() => {
+                console.log(`Registro ${id} e suas notificações foram removidos com sucesso.`);
               });
             }
           });
         }, error => {
           console.error("Erro ao carregar registros:", error);
-          tabelaEspera.innerHTML = '<tr><td colspan="6" class="text-center p-4">Erro ao carregar registros</td></tr>';
+          tabelaEspera.innerHTML = '<tr><td colspan="7" class="text-center p-4">Erro ao carregar registros</td></tr>';
         });
       }
 
@@ -199,12 +238,11 @@
           const ultimasNotificacoes = [];
           Object.keys(notificacoes).forEach(id => {
             const notificacoesMotorista = notificacoes[id];
-            const notificacoesArray = Object.keys(notificacoesMotorista).map(notifId => ({
+            const notificacoesArray = Object.entries(notificacoesMotorista).map(([notifId, notif]) => ({
               id,
               notifId,
-              ...notificacoesMotorista[notifId]
+              ...notif
             }));
-            // Ordenar por dataHora e pegar a mais recente
             const maisRecente = notificacoesArray.sort((a, b) => 
               new Date(b.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$2-$1 $4')) - 
               new Date(a.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$2-$1 $4'))
@@ -223,16 +261,26 @@
             new Date(a.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+:\d+)/, '$3-$2-$1 $4'))
           );
 
-          ultimasNotificacoes.forEach(n => {
-            console.log("Adicionando notificação:", n);
-            const div = document.createElement("div");
-            div.classList.add("notification", n.tipo === "penalidade" ? "penalidade" : "standard");
-            div.innerHTML = `
-              ${n.motorista || "Não informado"} (FMO: ${n.fmo || "Não informado"}, Placa: ${n.placa || "Não informado"})<br>
-              ${n.mensagem || `Status atualizado: ${n.status}`}<br>
-              ${n.dataHora || "Não informado"}
-            `;
-            notificacoesDiv.appendChild(div);
+          // Filtrar notificações para excluir aquelas de registros com status "Finalizadas"
+          onValue(ref(database, 'registrosFMO'), registrosSnapshot => {
+            const registros = registrosSnapshot.val() || {};
+            ultimasNotificacoes.forEach(n => {
+              const registro = registros[n.id];
+              if (!registro || normalizeStatus(registro.status) !== STATUSES.FINALIZADA) {
+                console.log("Adicionando notificação:", n);
+                const div = document.createElement("div");
+                div.classList.add("notification", n.tipo === "penalidade" ? "penalidade" : "standard");
+                div.innerHTML = `
+                  ${n.motorista || "Não informado"} (FMO: ${n.fmo || "Não informado"}, Placa: ${n.placa || "Não informado"})<br>
+                  ${n.mensagem || `Status atualizado: ${n.status}`}<br>
+                  ${n.dataHora || "Não informado"}
+                `;
+                notificacoesDiv.appendChild(div);
+              }
+            });
+          }, { onlyOnce: true }, error => {
+            console.error("Erro ao verificar registros para notificações:", error);
+            notificacoesDiv.innerHTML = '<p class="text-center text-red-500">Erro ao carregar notificações</p>';
           });
         }, error => {
           console.error("Erro ao carregar notificações:", error);
@@ -244,6 +292,5 @@
       populateNotifications();
     });
   </script>
-  
 </body>
 </html>
