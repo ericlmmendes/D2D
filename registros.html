@@ -141,7 +141,8 @@
                 <th scope="col" class="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-center">Ações</th>
               </tr>
             </thead>
-            <tbody id="tabelaRegistros" class="bg-white divide-y divide-slate-200"></tbody>
+            <tbody id="tabelaRegistros" class="bg-white divide-y divide-slate-200">
+            </tbody>
           </table>
           <div id="noRecords" class="hidden text-center p-8 text-slate-500">Nenhum registro encontrado.</div>
         </div>
@@ -583,23 +584,21 @@
 
       function enviarRelatorioGeral() {
         if (allRecords.length === 0) return alert("Nenhum registro para gerar relatório.");
-        const confirmDelete = confirm("Isso enviará o relatório para o WhatsApp. Deseja também remover os registros finalizados do banco de dados?");
-        
+        if (!confirm("Isso enviará o relatório para o WhatsApp e removerá os registros finalizados. Deseja continuar?")) return;
+
         let mensagem = `📋 *Relatório Geral - CDC Barueri*\n\n`;
         allRecords.forEach((r, i) => {
           mensagem += `🔹 *Registro ${i + 1}:*\nFMO: ${r.fmo || 'Não informado'}\nNome: ${r.motorista || 'Não informado'}\nPlaca: ${r.placa || 'Não informado'}\nQtde. Sacas: ${r.quantidadeSacas || '0'}${r.isExpress ? ' (Express)' : ''}\nHora: ${r.dataHora || 'Não informado'}\nDoca: ${r.docaSelecionada || 'N/D'}\nStatus: ${normalizeStatus(r.status)}\nEndereço: ${r.enderecoCompleto || 'Geolocalização não disponível'}\nPenalidade: ${r.penalidade ? r.penalidade.motivo : 'Nenhuma'}\n\n`;
         });
         window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, "_blank");
 
-        if (confirmDelete) {
-          allRecords.forEach(record => {
-            if (normalizeStatus(record.status) === STATUSES.FINALIZADA) {
-              remove(ref(database, `registrosFMO/${record.id}`));
-              remove(ref(database, `notificacoesFMO/${record.id}`));
-              remove(ref(database, `notificacoesPenalidades/${record.id}`));
-            }
-          });
-        }
+        allRecords.forEach(record => {
+          if (normalizeStatus(record.status) === STATUSES.FINALIZADA) {
+            remove(ref(database, `registrosFMO/${record.id}`));
+            remove(ref(database, `notificacoesFMO/${record.id}`));
+            remove(ref(database, `notificacoesPenalidades/${record.id}`));
+          }
+        });
       }
 
       const exportToExcel = () => {
