@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,797 +12,638 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background-color: #f9fafb;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
+    
+    .logo {
+      max-width: 200px;
+      margin: 0 auto 2rem;
+      display: block;
+    }
+
     .header {
       background: linear-gradient(to right, #1e3a8a, #3b82f6);
       color: white;
       padding: 1.5rem 2rem;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
-    .logo {
-      max-width: 200px;
-      margin: 0 auto 2rem;
-      display: block;
+    
+    .table-img {
+      transition: transform 0.2s ease-in-out;
     }
-    .summary-box {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 2rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
+    .table-img:hover {
+      transform: scale(2.5);
+      z-index: 10;
+      position: relative;
     }
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      border-radius: 0.75rem;
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    th, td {
-      padding: 1rem 1.5rem;
-      text-align: left;
-      font-size: 0.95rem;
-    }
-    th {
-      background: #1e3a8a;
-      color: white;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    td {
-      background: white;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    tbody tr:nth-child(even) td {
-      background: #f9fafb;
-    }
-    tbody tr:hover td {
-      background: #f1f5f9;
-      transition: background 0.2s ease;
-    }
-    img.table-img {
-      width: 80px;
-      height: auto;
-      object-fit: cover;
-      border-radius: 0.25rem;
+    .sortable:hover {
       cursor: pointer;
-      transition: transform 0.2s ease;
+      background-color: #f1f5f9;
     }
-    img.table-img:hover {
-      transform: scale(1.05);
+    .sort-asc::after, .sort-desc::after {
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      margin-left: 0.5rem;
     }
-    .status-btn {
-      width: 160px;
-      font-size: 0.875rem;
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      transition: all 0.2s ease;
-    }
-    .status-btn.aguardando {
-      background-color: #f59e0b;
-    }
-    .status-btn.em-descarga {
-      background-color: #3b82f6;
-    }
-    .status-btn.finalizado {
-      background-color: #16a34a;
-      cursor: not-allowed;
-    }
-    .invalid-address {
-      color: #dc2626;
-      font-weight: 500;
-    }
-    .valid-address {
-      color: #16a34a;
-      font-weight: 500;
-    }
-    .penalidade-aplicada {
-      color: #dc2626;
-      font-weight: 600;
-    }
-    .cep-link {
-      color: #2563eb;
-      cursor: pointer;
-      text-decoration: underline;
-      font-weight: 500;
-      transition: color 0.2s ease;
-    }
-    .cep-link:hover {
-      color: #1e40af;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.3s ease;
-    }
-    .modal-content {
-      background: white;
-      padding: 2rem;
-      max-width: 90%;
-      width: 700px;
-      border-radius: 1rem;
-      box-shadow: 0 12px 20px rgba(0,0,0,0.25);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    .modal img {
-      width: 100%;
-      max-width: 400px;
-      height: auto;
-      border-radius: 0.5rem;
-      margin-top: 1.5rem;
-    }
-    .fixed-buttons {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 50;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-      align-items: flex-end;
-    }
-    .fixed-buttons button {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-      transition: transform 0.2s ease, background-color 0.2s ease;
-    }
-    .fixed-buttons button:hover {
-      transform: scale(1.1);
-    }
-    .fixed-buttons button i {
-      font-size: 1.75rem;
-    }
-    .footer {
-      background-color: #1f2937;
-      color: white;
-      padding: 2rem 0;
-      text-align: center;
-      margin-top: 3rem;
-    }
-    .footer a {
-      color: #3b82f6;
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-    .footer a:hover {
-      color: #60a5fa;
-    }
+    .sort-asc::after { content: "\f0de"; }
+    .sort-desc::after { content: "\f0dd"; }
+
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
-    @media (max-width: 640px) {
-      th, td {
-        padding: 0rem;
-        font-size: 0.85rem;
-      }
-      .status-btn {
-        width: 140px;
-        font-size: 0.75rem;
-      }
-      .modal-content {
-        width: 95%;
-        padding: 1.5rem;
-      }
-      .fixed-buttons {
-        bottom: 1.5rem;
-        right: 1.5rem;
-      }
-      .fixed-buttons button {
-        width: 50px;
-        height: 50px;
-      }
-      .fixed-buttons button i {
-        font-size: 1.5rem;
-      }
-      .summary-box {
-        padding: 1.5rem;
-      }
-      .logo {
-        max-width: 120px;
-      }
-      .footer {
-        padding: 1.5rem 0;
-      }
+    .modal-animation {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    .fab-menu {
+      transition: all 0.3s ease-in-out;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
-  <header class="header">
-    <div class="max-w-none mx-auto flex items-center gap-4">
-      <i class="fas fa-clipboard text-3xl"></i>
-      <h1 class="text-3xl font-extrabold tracking-tight">Registros D2D - CDC Barueri</h1>
+<body class="bg-slate-100 text-slate-800 flex flex-col min-h-screen">
+
+  <header class="header sticky top-0 z-40">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <div class="flex items-center gap-4">
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Painel de Controle D2D</h1>
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="max-w-none mx-auto p-4 sm:p-8 flex-grow">
+  <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <img src="./img/logo1.ico" alt="CDC Barueri Logo" class="logo">
-    <div class="summary-box w-full">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-chart-bar"></i>Resumo</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div class="p-5 bg-blue-50 rounded-lg transition hover:shadow-md">
-          <p class="text-sm font-medium text-gray-600">Descargas Finalizadas</p>
-          <p id="countFinalizadas" class="text-5xl font-bold text-blue-600 mt-2">0</p>
+    
+    <section id="summary" class="mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-xl shadow-lg p-6 flex items-center gap-6 transition-transform hover:scale-105">
+          <div class="bg-green-100 text-green-600 p-4 rounded-full flex-shrink-0"><i class="fas fa-check fa-2x"></i></div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Finalizadas</p>
+            <p id="countFinalizadas" class="text-4xl font-extrabold text-slate-800 mt-1">0</p>
+          </div>
         </div>
-        <div class="p-5 bg-yellow-50 rounded-lg transition hover:shadow-md">
-          <p class="text-sm font-medium text-gray-600">Aguardando Descarregamento</p>
-          <p id="countAguardando" class="text-5xl font-bold text-yellow-600 mt-2">0</p>
+        <div class="bg-white rounded-xl shadow-lg p-6 flex items-center gap-6 transition-transform hover:scale-105">
+          <div class="bg-yellow-100 text-yellow-600 p-4 rounded-full flex-shrink-0"><i class="fas fa-clock fa-2x"></i></div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Aguardando</p>
+            <p id="countAguardando" class="text-4xl font-extrabold text-slate-800 mt-1">0</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 flex items-center gap-6 transition-transform hover:scale-105">
+          <div class="bg-blue-100 text-blue-600 p-4 rounded-full flex-shrink-0"><i class="fas fa-truck-loading fa-2x"></i></div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Em Descarga</p>
+            <p id="countEmDescarga" class="text-4xl font-extrabold text-slate-800 mt-1">0</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 flex items-center gap-6 transition-transform hover:scale-105">
+          <div class="bg-red-100 text-red-600 p-4 rounded-full flex-shrink-0"><i class="fas fa-exclamation-triangle fa-2x"></i></div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Com Penalidade</p>
+            <p id="countPenalidades" class="text-4xl font-extrabold text-slate-800 mt-1">0</p>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="bg-white rounded-2xl shadow-xl p-6 w-full">
-      <div class="fixed-buttons">
-        <button id="btnRelatorioGeral" class="bg-blue-600 text-white hover:bg-blue-700" title="Deletar Informação">
-          <i class="fa fa-trash" aria-hidden="true"></i>
-        </button>
-        <button id="btnExportarPDF" class="bg-green-600 text-white hover:bg-green-700" title="Exportar PDF">
-          <i class="fas fa-file-pdf"></i>
-        </button>
+    <section id="records">
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="p-6 border-b border-slate-200 space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
+          <h2 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+            <i class="fas fa-clipboard-list text-blue-600"></i>
+            Fila de Descarregamento
+          </h2>
+          <div class="relative">
+            <input type="text" id="searchInput" placeholder="Buscar por motorista, placa, FMO..." class="pl-10 pr-4 py-2 border border-slate-300 rounded-full w-full md:w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sortable" data-sort="motorista">Motorista</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sortable" data-sort="fmo">FMO</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sortable" data-sort="placa">Placa</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sortable sort-asc" data-sort="dataHora">Data/Hora</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Foto</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sortable" data-sort="quantidadeSacas">Qtde. Sacas</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sortable" data-sort="docaSelecionada">Doca</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sortable" data-sort="status">Status</th>
+                <th scope="col" class="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaRegistros" class="bg-white divide-y divide-slate-200">
+            </tbody>
+          </table>
+          <div id="noRecords" class="hidden text-center p-8 text-slate-500">Nenhum registro encontrado.</div>
+        </div>
       </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead>
-            <tr>
-              <th>Motorista</th>
-              <th>Telefone</th>
-              <th>FMO</th>
-              <th>Placa</th>
-              <th>Data e Hora</th>
-              <th>Local (CEP)</th>
-              <th>Foto</th>
-              <th>Doca</th>
-              <th>Status</th>
-              <th>Notificar</th>
-              <th>Penalidade</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaRegistros"></tbody>
-        </table>
-      </div>
-    </div>
+    </section>
   </main>
-
-  <footer class="footer">
-    <p>© 2025 Sistema D2D - Fila de Descaregamento CDC Barueri. Todos os direitos reservados.</p>
-    <p>Desenvolvido por <a href="mailto:ericlm.evo@gmail.com">ERICLM.EVO</a></p>
-  </footer>
-
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-info-circle"></i>Detalhes do Registro</h3>
-      <div id="modal-body" class="space-y-4 text-gray-700"></div>
-      <button id="btnFecharModal" class="mt-6 bg-gray-600 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition w-full font-medium flex items-center justify-center gap-2"><i class="fas fa-times"></i>Fechar</button>
-    </div>
+  
+  <div id="fab-container" class="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
+    <button id="btnRelatorioGeral" class="fab-menu bg-cyan-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 hover:bg-cyan-700 scale-0" title="Enviar Relatório e Limpar Finalizados">
+      <i class="fas fa-share-square fa-lg"></i>
+    </button>
+    <button id="btnExportarExcel" class="fab-menu bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 hover:bg-green-700 scale-0" title="Exportar para Excel (XLSX)">
+      <i class="fas fa-file-excel fa-lg"></i>
+    </button>
+    <button id="btnExportarPDF" class="fab-menu bg-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 hover:bg-red-700 scale-0" title="Exportar para PDF">
+      <i class="fas fa-file-pdf fa-lg"></i>
+    </button>
+    <button id="fab-main" class="bg-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-transform hover:scale-110 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300">
+      <i class="fas fa-plus fa-lg transition-transform"></i>
+    </button>
   </div>
 
-  <script type="text/javascript">
-    var gk_isXlsx = false;
-    var gk_xlsxFileLookup = {};
-    var gk_fileData = {};
-    function filledCell(cell) {
-      return cell !== '' && cell != null;
-    }
-    function loadFileData(filename) {
-      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-        try {
-          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-          var firstSheetName = workbook.SheetNames[0];
-          var worksheet = workbook.Sheets[firstSheetName];
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          var filteredData = jsonData.filter(row => row.some(filledCell));
-          var headerRowIndex = filteredData.findIndex((row, index) =>
-            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-          );
-          if (headerRowIndex === -1 || headerRowIndex > 25) {
-            headerRowIndex = 0;
-          }
-          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-          return csv;
-        } catch (e) {
-          console.error(e);
-          return "";
-        }
-      }
-      return gk_fileData[filename] || "";
-    }
-  </script>
+  <footer class="bg-slate-800 text-slate-400 py-6 mt-auto">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
+      <p>&copy; 2025 Sistema D2D - Fila de Descarregamento CDC Barueri.</p>
+      <p>Desenvolvido por <a href="mailto:ericlm.evo@gmail.com" class="font-semibold text-blue-400 hover:text-blue-300 transition-colors">ERICLM.EVO</a></p>
+    </div>
+  </footer>
 
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-content" class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-animation">
+      <div class="flex justify-between items-center border-b pb-3 mb-4">
+        <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2"><i class="fas fa-info-circle text-blue-500"></i>Detalhes do Registro</h3>
+        <button id="btnFecharModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times fa-lg"></i>
+        </button>
+      </div>
+      <div id="modal-body" class="space-y-3 text-sm text-gray-700"></div>
+    </div>
+  </div>
+  
   <script type="module">
     import { database, ref, update, onValue, remove, push } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
-      const tabela = document.getElementById("tabelaRegistros");
-      const modal = document.getElementById("modal");
-      const modalBody = document.getElementById("modal-body");
-      const btnFecharModal = document.getElementById("btnFecharModal");
-      const btnRelatorioGeral = document.getElementById("btnRelatorioGeral");
-      const btnExportarPDF = document.getElementById("btnExportarPDF");
-      const countFinalizadas = document.getElementById("countFinalizadas");
-      const countAguardando = document.getElementById("countAguardando");
-      const targetAddress = "Avenida Prefeito João Vilallobo Quero, Conjunto Habitacional Mirante dos Altos, Jardim Belval, Barueri, Região Imediata de São Paulo, Região Metropolitana de São Paulo, São Paulo, Região Sudeste, 06422-122, Brasil";
+      const elements = {
+        tabela: document.getElementById("tabelaRegistros"),
+        noRecords: document.getElementById("noRecords"),
+        modal: document.getElementById("modal"),
+        modalBody: document.getElementById("modal-body"),
+        btnFecharModal: document.getElementById("btnFecharModal"),
+        btnRelatorioGeral: document.getElementById("btnRelatorioGeral"),
+        btnExportarPDF: document.getElementById("btnExportarPDF"),
+        btnExportarExcel: document.getElementById("btnExportarExcel"),
+        searchInput: document.getElementById("searchInput"),
+        fabContainer: document.getElementById("fab-container"),
+        fabMain: document.getElementById("fab-main"),
+        summary: {
+          finalizadas: document.getElementById("countFinalizadas"),
+          aguardando: document.getElementById("countAguardando"),
+          emDescarga: document.getElementById("countEmDescarga"),
+          penalidades: document.getElementById("countPenalidades"),
+        }
+      };
 
-      const statuses = [
-        "Aguardando descarregamento",
-        "Em descarga",
-        "Descarga finalizada"
-      ];
-      const docks = ["16", "17", "18"];
+      let allRecords = [];
+      let sortConfig = { key: 'dataHora', direction: 'asc' };
 
-      function extractCEP(address) {
-        if (!address) return "Sem CEP";
-        const match = address.match(/\d{5}-\d{3}/);
-        return match ? match[0] : "Sem CEP";
-      }
+      const STATUSES = {
+        AGUARDANDO: "Aguardando",
+        EM_DESCARGA: "Em Descarga",
+        FINALIZADA: "Finalizadas"
+      };
+      const LEGACY_STATUSES = {
+        AGUARDANDO: "Aguardando descarregamento",
+        EM_DESCARGA: "Em descarga",
+        FINALIZADA: "Descarga finalizada"
+      };
+      const DOCKS = ["12", "17", "18"];
+      const CORRECT_ADDRESS = "Avenida Prefeito João Vilallobo Quero, Conjunto Habitacional Mirante dos Altos, Jardim Belval, Barueri, Região Imediata de São Paulo, Região Metropolitana de São Paulo, São Paulo, Região Sudeste, 06422-122, Brasil";
 
-      function openModal(record) {
-        modalBody.innerHTML = `
-          <div class="grid grid-cols-1 gap-4">
-            <p><span class="font-semibold"><i class="fas fa-user mr-1"></i>Motorista:</span> ${record.motorista}</p>
-            <p><span class="font-semibold"><i class="fas fa-phone mr-1"></i>Telefone:</span> ${record.telefone}</p>
-            <p><span class="font-semibold"><i class="fas fa-file-alt mr-1"></i>FMO:</span> ${record.fmo}</p>
-            <p><span class="font-semibold"><i class="fas fa-truck mr-1"></i>Placa:</span> ${record.placa}</p>
-            <p><span class="font-semibold"><i class="fas fa-clock mr-1"></i>Data e Hora:</span> ${record.dataHora}</p>
-            <p><span class="font-semibold"><i class="fas fa-map-marker-alt mr-1"></i>Endereço:</span> ${record.enderecoCompleto || "Sem endereço"}</p>
-            <p><span class="font-semibold"><i class="fas fa-dolly-flatbed mr-1"></i>Doca:</span> ${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "Não informada"}</p>
-            <p><span class="font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>Penalidade:</span> ${
-              record.penalidade ? `${record.penalidade.motivo} (${record.penalidade.dataHora})` : "Nenhuma penalidade aplicada"
-            }</p>
-            <img src="${record.imagem}" alt="Foto do registro" class="mt-2" />
+      const openModal = (record) => {
+        elements.modalBody.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-user w-5 text-center mr-1"></i>Motorista:</strong> <span class="${record.penalidade ? 'text-red-600' : record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.motorista}</span></p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-phone w-5 text-center mr-1"></i>Telefone:</strong> ${record.telefone}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-file-alt w-5 text-center mr-1"></i>FMO:</strong> ${record.fmo}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-truck w-5 text-center mr-1"></i>Placa:</strong> ${record.placa}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-boxes w-5 text-center mr-1"></i>Quantidade de Sacas:</strong> ${record.quantidadeSacas} ${record.isExpress ? '<span class="text-purple-600">(Carga Express)</span>' : ''}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-clock w-5 text-center mr-1"></i>Data e Hora:</strong> ${record.dataHora}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-dolly-flatbed w-5 text-center mr-1"></i>Doca:</strong> ${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "Não informada"}</p>
+            <p class="sm:col-span-2"><strong class="font-medium text-slate-600 block"><i class="fas fa-map-marker-alt w-5 text-center mr-1"></i>Endereço:</strong> <span class="${record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.enderecoCompleto || "Sem endereço"}</span></p>
+            <p class="sm:col-span-2"><strong class="font-medium text-slate-600 block"><i class="fas fa-exclamation-triangle w-5 text-center mr-1"></i>Penalidade:</strong> ${record.penalidade ? `<span class="text-red-600">${record.penalidade.motivo} (${record.penalidade.dataHora})</span>` : "Nenhuma"}</p>
           </div>
-        `;
-        modal.style.display = "flex";
+          <img src="${record.imagem}" alt="Foto do registro" class="mt-4 rounded-lg w-full max-w-sm mx-auto block cursor-pointer" onclick="window.open('${record.imagem}', '_blank')" />`;
+        elements.modal.classList.remove('hidden');
+      };
+
+      const closeModal = () => elements.modal.classList.add('hidden');
+
+      const toggleFabMenu = () => {
+        elements.fabMain.querySelector('i').classList.toggle('rotate-45');
+        elements.fabContainer.querySelectorAll('.fab-menu').forEach(btn => {
+          btn.classList.toggle('scale-0');
+          btn.classList.toggle('scale-100');
+        });
+      };
+
+      const setButtonLoading = (button, isLoading) => {
+        const icon = button.querySelector('i');
+        if (isLoading) {
+          button.disabled = true;
+          button.dataset.originalIcon = icon.className;
+          icon.className = 'spinner';
+        } else {
+          button.disabled = false;
+          icon.className = button.dataset.originalIcon;
+        }
+      };
+      
+      const normalizeStatus = (status) => {
+        if (!status) return STATUSES.AGUARDANDO;
+        if (status === LEGACY_STATUSES.AGUARDANDO || status === "Aguardando descarregamento") return STATUSES.AGUARDANDO;
+        if (status === LEGACY_STATUSES.EM_DESCARGA || status === "Em descarga") return STATUSES.EM_DESCARGA;
+        if (status === LEGACY_STATUSES.FINALIZADA || status === "Descarga finalizada") return STATUSES.FINALIZADA;
+        return status;
+      };
+
+      const updateSummary = () => {
+        const finalizadas = allRecords.filter(r => normalizeStatus(r.status) === STATUSES.FINALIZADA).length;
+        const aguardando = allRecords.filter(r => normalizeStatus(r.status) === STATUSES.AGUARDANDO).length;
+        const emDescarga = allRecords.filter(r => normalizeStatus(r.status) === STATUSES.EM_DESCARGA).length;
+        const penalidades = allRecords.filter(r => r.penalidade && Object.keys(r.penalidade).length > 0).length;
+
+        elements.summary.finalizadas.textContent = finalizadas;
+        elements.summary.aguardando.textContent = aguardando;
+        elements.summary.emDescarga.textContent = emDescarga;
+        elements.summary.penalidades.textContent = penalidades;
+
+        console.log('Contadores atualizados:', {
+          finalizadas,
+          aguardando,
+          emDescarga,
+          penalidades,
+          allRecords: allRecords.map(r => ({ id: r.id, status: r.status, penalidade: r.penalidade }))
+        });
+      };
+
+      const renderTable = () => {
+        const searchTerm = elements.searchInput.value.toLowerCase();
+        const filteredRecords = allRecords.filter(r => 
+          r.motorista.toLowerCase().includes(searchTerm) ||
+          r.placa.toLowerCase().includes(searchTerm) ||
+          r.fmo.toLowerCase().includes(searchTerm)
+        );
+
+        filteredRecords.sort((a, b) => {
+          const key = sortConfig.key || 'dataHora';
+          const direction = sortConfig.direction || 'asc';
+
+          const valA = key === 'quantidadeSacas' ? parseInt(a[key] || 0) : a[key] || '';
+          const valB = key === 'quantidadeSacas' ? parseInt(b[key] || 0) : b[key] || '';
+          
+          if (valA < valB) return direction === 'asc' ? -1 : 1;
+          if (valA > valB) return direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+        
+        elements.tabela.innerHTML = "";
+        if (filteredRecords.length === 0) {
+          elements.noRecords.classList.remove('hidden');
+          return;
+        }
+        elements.noRecords.classList.add('hidden');
+
+        const fragment = document.createDocumentFragment();
+        filteredRecords.forEach(record => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-slate-50 transition-colors';
+
+          const currentStatus = normalizeStatus(record.status);
+          const isStatusDisabled = !record.notificado || currentStatus === STATUSES.FINALIZADA;
+          let statusConfig;
+          switch (currentStatus) {
+            case STATUSES.AGUARDANDO: 
+              statusConfig = { classes: 'bg-yellow-500 hover:bg-yellow-600', icon: 'fas fa-clock' };
+              break;
+            case STATUSES.EM_DESCARGA: 
+              statusConfig = { classes: 'bg-blue-500 hover:bg-blue-600', icon: 'fas fa-truck-loading' };
+              break;
+            case STATUSES.FINALIZADA: 
+              statusConfig = { classes: 'bg-green-500', icon: 'fas fa-check-circle' };
+              break;
+            default: 
+              statusConfig = { classes: 'bg-slate-500', icon: 'fas fa-question-circle' };
+              break;
+          }
+
+          row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${record.penalidade ? 'text-red-600' : record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.motorista}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.fmo}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-mono">${record.placa}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.dataHora}</td>
+            <td class="px-6 py-4 whitespace-nowrap"><img src="${record.imagem}" alt="Foto" class="h-10 w-10 rounded-md object-cover cursor-pointer table-img"></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.quantidadeSacas} ${record.isExpress ? '<span class="text-purple-600 font-medium">(Express)</span>' : ''}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "N/D"}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <button 
+                data-id="${record.id}" 
+                data-status="${currentStatus}" 
+                class="btn-status-cycle inline-flex items-center gap-2 text-white font-semibold py-2 px-3 rounded-full text-xs shadow-md transition-transform hover:scale-105 ${statusConfig.classes} ${isStatusDisabled ? 'opacity-70 cursor-not-allowed' : ''}" 
+                ${isStatusDisabled ? 'disabled' : ''}>
+                <i class="${statusConfig.icon}"></i>
+                <span>${currentStatus}</span>
+              </button>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <div class="flex items-center justify-center gap-3">
+                <button class="btn-notificar inline-flex items-center justify-center w-10 h-10 rounded-full text-white shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${record.notificado ? 'bg-slate-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}" title="Notificar Motorista" ${record.notificado ? 'disabled' : ''} data-id="${record.id}">
+                  <i class="fas fa-bell"></i>
+                </button>
+                <button class="btn-penalidade inline-flex items-center justify-center w-10 h-10 rounded-full text-white shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${record.penalidade ? 'bg-slate-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'}" title="Aplicar Penalidade" ${record.penalidade ? 'disabled' : ''} data-id="${record.id}">
+                  <i class="fas fa-exclamation-triangle"></i>
+                </button>
+                <button class="btn-details inline-flex items-center justify-center w-10 h-10 rounded-full text-white shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-blue-500 hover:bg-blue-600" title="Ver Detalhes" data-id="${record.id}">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </td>
+          `;
+          fragment.appendChild(row);
+        });
+        elements.tabela.appendChild(fragment);
+      };
+      
+      const listenToData = () => {
+        onValue(ref(database, 'registrosFMO'), snapshot => {
+          const data = snapshot.val() || {};
+          allRecords = Object.entries(data).map(([id, record]) => ({ 
+            id, 
+            ...record,
+            status: normalizeStatus(record.status || STATUSES.AGUARDANDO),
+            quantidadeSacas: record.quantidadeSacas || '0',
+            isExpress: record.isExpress || false
+          }));
+          updateSummary();
+          renderTable();
+        }, (error) => {
+          console.error("Erro ao carregar dados do Firebase:", error);
+          alert("Erro ao carregar dados: " + error.message);
+        });
+      };
+
+      const handleTableClick = (e) => {
+        const target = e.target.closest('button, img');
+        if (!target) return;
+
+        const recordId = target.dataset.id;
+        if (!recordId) return;
+
+        const record = allRecords.find(r => r.id === recordId);
+
+        if (target.matches('.btn-details, .table-img')) openModal(record);
+        if (target.matches('.btn-notificar')) handleNotify(recordId, record, target);
+        if (target.matches('.btn-penalidade')) handlePenalty(recordId, record, target);
+        if (target.matches('.btn-status-cycle')) handleStatusCycle(recordId, target.dataset.status, record);
+      };
+
+      async function handleStatusChange(id, newStatus, record) {
+        if (!record.notificado) return alert("Clique em Notificar antes de alterar o status.");
+        
+        const notificacao = { 
+          motorista: record.motorista, 
+          fmo: record.fmo, 
+          placa: record.placa, 
+          status: newStatus, 
+          dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) 
+        };
+        try {
+          await Promise.all([
+            update(ref(database, `registrosFMO/${id}`), { status: newStatus }),
+            push(ref(database, `notificacoesFMO/${id}`), notificacao)
+          ]);
+        } catch (error) {
+          console.error("Erro ao atualizar status:", error);
+          alert("Erro ao atualizar status: " + error.message);
+        }
       }
 
-      function closeModal() {
-        modal.style.display = "none";
+      function handleStatusCycle(id, currentStatus, record) {
+        const statusOrder = [STATUSES.AGUARDANDO, STATUSES.EM_DESCARGA, STATUSES.FINALIZADA];
+        const currentIndex = statusOrder.indexOf(currentStatus);
+        
+        if (currentIndex >= statusOrder.length - 1) return;
+        
+        const nextStatus = statusOrder[currentIndex + 1];
+        handleStatusChange(id, nextStatus, record);
       }
-
-      btnFecharModal.addEventListener('click', closeModal);
 
       async function getAvailableDock() {
         return new Promise((resolve) => {
           onValue(ref(database, 'registrosFMO'), snapshot => {
-            const registros = snapshot.val() || {};
-            const usedDocks = Object.values(registros)
-              .filter(r => r.docaSelecionada && r.status !== "Descarga finalizada")
+            const usedDocks = Object.values(snapshot.val() || {})
+              .filter(r => r.docaSelecionada && normalizeStatus(r.status) !== STATUSES.FINALIZADA)
               .map(r => r.docaSelecionada);
-            const availableDock = docks.find(dock => !usedDocks.includes(dock)) || "";
-            resolve(availableDock);
+            resolve(DOCKS.find(dock => !usedDocks.includes(dock)) || "");
           }, { onlyOnce: true });
         });
       }
 
-      function trocaStatus(id, btn) {
-        onValue(ref(database, `registrosFMO/${id}`), async snapshot => {
-          const record = snapshot.val();
-          if (!record.notificado) {
-            alert("Clique em Notificar antes de alterar o status.");
+      async function handleNotify(id, record, button) {
+        setButtonLoading(button, true);
+        try {
+          if (!record.placa) {
+            alert("Placa do veículo não informada.");
             return;
           }
-          let atual = record.status || statuses[0];
-          let idx = statuses.indexOf(atual);
-          if (idx < statuses.length - 1) {
-            idx++;
-            const newStatus = statuses[idx];
-            const notificacao = {
-              motorista: record.motorista,
-              fmo: record.fmo,
-              placa: record.placa,
-              status: newStatus,
-              dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-            };
-            try {
-              await Promise.all([
-                update(ref(database, `registrosFMO/${id}`), { status: newStatus }),
-                push(ref(database, `notificacoesFMO/${id}`), notificacao)
-              ]);
-              btn.innerHTML = `<i class="${idx === statuses.length - 1 ? 'fas fa-check-circle' : 'fas fa-sync'} mr-1"></i>${newStatus}`;
-              btn.classList.remove('aguardando', 'em-descarga', 'finalizado');
-              btn.classList.add(idx === 0 ? 'aguardando' : idx === 1 ? 'em-descarga' : 'finalizado');
-              if (idx === statuses.length - 1) {
-                btn.disabled = true;
-              }
-              updateSummary();
-            } catch (error) {
-              console.error("Erro ao atualizar status ou enviar notificação:", error);
-              alert("Erro ao atualizar status: " + error.message);
-            }
-          }
-        }, { onlyOnce: true });
-      }
-
-      function updateSummary() {
-        onValue(ref(database, 'registrosFMO'), snapshot => {
-          const registros = snapshot.val();
-          if (!registros) {
-            countFinalizadas.textContent = "0";
-            countAguardando.textContent = "0";
-            return;
-          }
-          const finalizadas = Object.values(registros).filter(r => r.status === "Descarga finalizada").length;
-          const aguardando = Object.values(registros).filter(r => r.status === "Aguardando descarregamento").length;
-          countFinalizadas.textContent = finalizadas;
-          countAguardando.textContent = aguardando;
-        }, { onlyOnce: true });
-      }
-
-      async function populateTable() {
-        tabela.innerHTML = "";
-        onValue(ref(database, 'registrosFMO'), async snapshot => {
-          tabela.innerHTML = "";
-          const registros = snapshot.val();
-          if (!registros) {
-            tabela.innerHTML = '<tr><td colspan="11" class="text-center p-4 text-gray-600">Nenhum registro encontrado</td></tr>';
-            updateSummary();
+          const availableDock = await getAvailableDock();
+          if (!availableDock) {
+            alert("Nenhuma doca disponível. Aguarde.");
             return;
           }
 
-          for (const [id, r] of Object.entries(registros)) {
-            const record = { ...r, id };
-            const row = tabela.insertRow();
-            row.classList.add("border-b");
-
-            const isValidAddress = r.enderecoCompleto === targetAddress;
-            const hasPenalidade = !!r.penalidade; // Verifica se há penalidade
-
-            const motoristaCell = row.insertCell(0);
-            motoristaCell.textContent = r.motorista;
-            motoristaCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
-
-            const telefoneCell = row.insertCell(1);
-            telefoneCell.textContent = r.telefone;
-            telefoneCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
-
-            const fmoCell = row.insertCell(2);
-            fmoCell.textContent = r.fmo;
-            fmoCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
-
-            const placaCell = row.insertCell(3);
-            placaCell.textContent = r.placa;
-            placaCell.classList.add(hasPenalidade ? "penalidade-aplicada" : isValidAddress ? "valid-address" : "invalid-address");
-
-            row.insertCell(4).textContent = r.dataHora;
-
-            const localCell = row.insertCell(5);
-            localCell.classList.add("p-3");
-            if (r.enderecoCompleto) {
-              localCell.innerHTML = `<span class="cep-link">${extractCEP(r.enderecoCompleto)}</span>`;
-              localCell.querySelector(".cep-link").onclick = () => openModal(record);
-            } else if (r.latitude && r.longitude) {
-              localCell.innerHTML = `<span class="cep-link">Carregando...</span>`;
-              fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${r.latitude}&lon=${r.longitude}`)
-                .then(res => res.json())
-                .then(data => {
-                  const endereco = data.display_name;
-                  update(ref(database, `registrosFMO/${id}`), { enderecoCompleto: endereco }).then(() => {
-                    const cep = extractCEP(endereco);
-                    localCell.innerHTML = `<span class="cep-link">${cep}</span>`;
-                    localCell.querySelector(".cep-link").onclick = () => openModal(record);
-                    const isValid = endereco === targetAddress;
-                    if (!hasPenalidade) { // Aplica apenas se não houver penalidade
-                      motoristaCell.classList.add(isValid ? "valid-address" : "invalid-address");
-                      telefoneCell.classList.add(isValid ? "valid-address" : "invalid-address");
-                      fmoCell.classList.add(isValid ? "valid-address" : "invalid-address");
-                      placaCell.classList.add(isValid ? "valid-address" : "invalid-address");
-                    }
-                  }).catch(error => {
-                    localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
-                    localCell.querySelector(".cep-link").onclick = () => openModal(record);
-                    if (!hasPenalidade) {
-                      motoristaCell.classList.add("invalid-address");
-                      telefoneCell.classList.add("invalid-address");
-                      fmoCell.classList.add("invalid-address");
-                      placaCell.classList.add("invalid-address");
-                    }
-                  });
-                })
-                .catch(() => {
-                  localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
-                  localCell.querySelector(".cep-link").onclick = () => openModal(record);
-                  if (!hasPenalidade) {
-                    motoristaCell.classList.add("invalid-address");
-                    telefoneCell.classList.add("invalid-address");
-                    fmoCell.classList.add("invalid-address");
-                    placaCell.classList.add("invalid-address");
-                  }
-                });
-            } else {
-              localCell.innerHTML = `<span class="cep-link">Sem CEP</span>`;
-              localCell.querySelector(".cep-link").onclick = () => openModal(record);
-              if (!hasPenalidade) {
-                motoristaCell.classList.add("invalid-address");
-                telefoneCell.classList.add("invalid-address");
-                fmoCell.classList.add("invalid-address");
-                placaCell.classList.add("invalid-address");
-              }
-            }
-
-            const imgCell = row.insertCell(6);
-            const img = document.createElement("img");
-            img.src = r.imagem;
-            img.alt = "Foto";
-            img.classList.add("table-img");
-            img.onclick = () => openModal(record);
-            imgCell.classList.add("p-3");
-            imgCell.appendChild(img);
-
-            const docaCell = row.insertCell(7);
-            docaCell.classList.add("p-3");
-            docaCell.textContent = r.docaSelecionada ? `Doca ${r.docaSelecionada}` : "Não informada";
-
-            const statusCell = row.insertCell(8);
-            statusCell.classList.add("p-3");
-            const btnStatus = document.createElement("button");
-            btnStatus.className = `status-btn text-white p-2 rounded-lg transition text-sm ${
-              r.status === "Aguardando descarregamento" ? "aguardando" :
-              r.status === "Em descarga" ? "em-descarga" : "finalizado"
-            }`;
-            btnStatus.innerHTML = `<i class="${
-              r.status === "Descarga finalizada" ? "fas fa-check-circle" : "fas fa-sync"
-            } mr-1"></i>${r.status || statuses[0]}`;
-            btnStatus.disabled = !r.notificado || r.status === "Descarga finalizada";
-            btnStatus.onclick = () => trocaStatus(id, btnStatus);
-            statusCell.appendChild(btnStatus);
-
-            const notificarCell = row.insertCell(9);
-            const btn = document.createElement("button");
-            btn.className = "bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition w-full text-sm";
-            btn.innerHTML = '<i class="fas fa-bell mr-1"></i>Notificar Motorista';
-            btn.onclick = async () => {
-              if (!r.placa) {
-                alert("Placa do veículo não informada.");
-                return;
-              }
-              const availableDock = await getAvailableDock();
-              if (!availableDock) {
-                alert("Nenhuma doca disponível. Aguarde até que uma doca esteja livre.");
-                return;
-              }
-              const notificacao = {
-                motorista: r.motorista,
-                fmo: r.fmo,
-                placa: r.placa,
-                doca: availableDock,
-                mensagem: `Informe CDC Barueri: Dirija-se à Doca ${availableDock}`,
-                dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-              };
-              try {
-                await Promise.all([
-                  push(ref(database, `notificacoesFMO/${id}`), notificacao),
-                  update(ref(database, `registrosFMO/${id}`), { 
-                    docaSelecionada: availableDock,
-                    notificado: true 
-                  })
-                ]);
-                docaCell.textContent = `Doca ${availableDock}`;
-                btnStatus.disabled = false;
-                alert("Notificação enviada para a sala de espera!");
-              } catch (error) {
-                console.error("Erro ao enviar notificação:", error);
-                alert("Erro ao enviar notificação: " + error.message);
-              }
-            };
-            notificarCell.classList.add("p-3");
-            notificarCell.appendChild(btn);
-
-            const penalidadeCell = row.insertCell(10);
-            penalidadeCell.classList.add("p-3");
-            if (r.penalidade) {
-              penalidadeCell.textContent = `Aplicada: ${r.penalidade.motivo}`;
-              penalidadeCell.classList.add("text-red-600", "font-medium");
-            } else {
-              const btnPenalidade = document.createElement("button");
-              btnPenalidade.className = "bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition w-full text-sm";
-              btnPenalidade.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Aplicar Penalidade';
-              btnPenalidade.onclick = async () => {
-                const motivo = prompt("Digite o motivo da penalidade:");
-                if (!motivo) {
-                  alert("O motivo da penalidade é obrigatório.");
-                  return;
-                }
-                const penalidade = {
-                  motorista: r.motorista,
-                  fmo: r.fmo,
-                  placa: r.placa,
-                  motivo: motivo,
-                  dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-                };
-                const notificacaoSalaEspera = {
-                  motorista: r.motorista,
-                  fmo: r.fmo,
-                  placa: r.placa,
-                  tipo: "penalidade",
-                  mensagem: `Penalidade aplicada: ${motivo}`,
-                  dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
-                };
-                try {
-                  await Promise.all([
-                    update(ref(database, `registrosFMO/${id}`), { 
-                      penalidade: {
-                        motivo: motivo,
-                        dataHora: penalidade.dataHora
-                      }
-                    }),
-                    push(ref(database, `notificacoesPenalidades/${id}`), penalidade),
-                    push(ref(database, `notificacoesFMO/${id}`), notificacaoSalaEspera)
-                  ]);
-                  penalidadeCell.textContent = `Aplicada: ${motivo}`;
-                  penalidadeCell.classList.add("text-red-600", "font-medium");
-                  btnPenalidade.remove();
-                  // Atualiza as células para refletir a penalidade
-                  motoristaCell.classList.remove("valid-address", "invalid-address");
-                  telefoneCell.classList.remove("valid-address", "invalid-address");
-                  fmoCell.classList.remove("valid-address", "invalid-address");
-                  placaCell.classList.remove("valid-address", "invalid-address");
-                  motoristaCell.classList.add("penalidade-aplicada");
-                  telefoneCell.classList.add("penalidade-aplicada");
-                  fmoCell.classList.add("penalidade-aplicada");
-                  placaCell.classList.add("penalidade-aplicada");
-                  alert("Penalidade aplicada e notificação enviada para a sala de espera!");
-                } catch (error) {
-                  console.error("Erro ao aplicar penalidade:", error);
-                  alert("Erro ao aplicar penalidade: " + error.message);
-                }
-              };
-              penalidadeCell.appendChild(btnPenalidade);
-            }
-          }
-          updateSummary();
-        });
-      }
-
-      function enviarRelatorioGeral() {
-        onValue(ref(database, 'registrosFMO'), snapshot => {
-          const registros = snapshot.val();
-          if (!registros) {
-            alert("Nenhum registro encontrado.");
-            tabela.innerHTML = '<tr><td colspan="11" class="text-center p-4">Nenhum registro encontrado</td></tr>';
-            return;
-          }
-
-          let mensagem = `📋 *Relatório Geral - CDC Barueri*\n\n`;
-          Object.values(registros).forEach((r, i) => {
-            mensagem += `🔹 *Registro ${i + 1}:*\n`;
-            mensagem += `FMO: ${r.fmo || 'Não informado'}\n`;
-            mensagem += `Nome: ${r.motorista || 'Não informado'}\n`;
-            mensagem += `Placa: ${r.placa || 'Não informada'}\n`;
-            mensagem += `Hora: ${r.dataHora || 'Não informada'}\n`;
-            mensagem += `Endereço: ${r.enderecoCompleto || 'Carregando...'}\n`;
-            mensagem += `Doca: ${r.docaSelecionada || 'Não informada'}\n`;
-            mensagem += `Status: ${r.status || statuses[0]}\n`;
-            mensagem += `Penalidade: ${r.penalidade ? `${r.penalidade.motivo} (${r.penalidade.dataHora})` : 'Nenhuma'}\n\n`;
-          });
-          const link = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
-          window.open(link, "_blank");
-
-          update(ref(database, 'config'), {
-            lastReportTimestamp: new Date().toISOString()
-          });
-
-          Object.keys(registros).forEach(id => {
-            if (registros[id].status === "Descarga finalizada") {
-              remove(ref(database, `registrosFMO/${id}`)).catch(error => {
-                console.error("Erro ao remover registro:", error);
-              });
-              remove(ref(database, `notificacoesFMO/${id}`)).catch(error => {
-                console.error("Erro ao remover notificações:", error);
-              });
-              remove(ref(database, `notificacoesPenalidades/${id}`)).catch(error => {
-                console.error("Erro ao remover notificações de penalidade:", error);
-              });
-            }
-          });
-        }, { onlyOnce: true });
-      }
-
-      function checkAndClearRecords() {
-        const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        if (hours === 7 && minutes === 0) {
-          onValue(ref(database, 'config'), snapshot => {
-            const config = snapshot.val() || {};
-            const lastReport = config.lastReportTimestamp ? new Date(config.lastReportTimestamp) : null;
-            const yesterday = new Date(now);
-            yesterday.setDate(now.getDate() - 1);
-            if (!lastReport || lastReport < yesterday) {
-              Promise.all([
-                remove(ref(database, 'registrosFMO')),
-                remove(ref(database, 'notificacoesFMO')),
-                remove(ref(database, 'notificacoesPenalidades'))
-              ])
-                .then(() => {
-                  console.log("Registros, notificações e penalidades limpos às 07:00.");
-                })
-                .catch(error => {
-                  console.error("Erro ao limpar dados:", error);
-                });
-            }
-          }, { onlyOnce: true });
+          const notificacao = { 
+            motorista: record.motorista, 
+            fmo: record.fmo, 
+            placa: record.placa, 
+            doca: availableDock, 
+            mensagem: `Informe CDC Barueri: Dirija-se à Doca ${availableDock}`, 
+            dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) 
+          };
+          
+          await Promise.all([
+            push(ref(database, `notificacoesFMO/${id}`), notificacao),
+            update(ref(database, `registrosFMO/${id}`), { docaSelecionada: availableDock, notificado: true })
+          ]);
+          alert("Notificação enviada para a sala de espera!");
+        } catch (error) {
+          console.error("Erro ao enviar notificação:", error);
+          alert("Erro ao enviar notificação: " + error.message);
+        } finally {
+          setButtonLoading(button, false);
         }
       }
 
-      function exportarPDF() {
-        onValue(ref(database, 'registrosFMO'), snapshot => {
-          const registros = snapshot.val();
-          if (!registros) {
-            alert("Nenhum registro encontrado para exportar.");
-            return;
+      async function handlePenalty(id, record, button) {
+        const motivo = prompt("Digite o motivo da penalidade:");
+        if (!motivo) return;
+
+        setButtonLoading(button, true);
+        try {
+          const dataHora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+          const penalidade = { motorista: record.motorista, fmo: record.fmo, placa: record.placa, motivo, dataHora };
+          
+          await Promise.all([
+            update(ref(database, `registrosFMO/${id}`), { penalidade: { motivo, dataHora } }),
+            push(ref(database, `notificacoesPenalidades/${id}`), penalidade),
+            push(ref(database, `notificacoesFMO/${id}`), { ...penalidade, tipo: "penalidade", mensagem: `Penalidade aplicada: ${motivo}` })
+          ]);
+          alert("Penalidade aplicada e notificada!");
+        } catch (error) {
+          console.error("Erro ao aplicar penalidade:", error);
+          alert("Erro ao aplicar penalidade: " + error.message);
+        } finally {
+          setButtonLoading(button, false);
+        }
+      }
+      
+      const handleSort = (e) => {
+        const th = e.target.closest('th.sortable');
+        if (!th) return;
+        const key = th.dataset.sort;
+        
+        document.querySelectorAll('th.sortable').forEach(h => {
+          if (h !== th) h.classList.remove('sort-asc', 'sort-desc');
+        });
+        
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+          sortConfig.direction = 'desc';
+          th.classList.remove('sort-asc');
+          th.classList.add('sort-desc');
+        } else {
+          sortConfig.key = key;
+          sortConfig.direction = 'asc';
+          th.classList.remove('sort-desc');
+          th.classList.add('sort-asc');
+        }
+        renderTable();
+      };
+
+      function enviarRelatorioGeral() {
+        if (allRecords.length === 0) return alert("Nenhum registro para gerar relatório.");
+        if (!confirm("Isso enviará o relatório para o WhatsApp e removerá os registros finalizados. Deseja continuar?")) return;
+
+        let mensagem = `📋 *Relatório Geral - CDC Barueri*\n\n`;
+        allRecords.forEach((r, i) => {
+          mensagem += `🔹 *Registro ${i + 1}:*\nFMO: ${r.fmo}\nNome: ${r.motorista}\nPlaca: ${r.placa}\nQtde. Sacas: ${r.quantidadeSacas}${r.isExpress ? ' (Express)' : ''}\nHora: ${r.dataHora}\nDoca: ${r.docaSelecionada || 'N/D'}\nStatus: ${normalizeStatus(r.status)}\nPenalidade: ${r.penalidade ? r.penalidade.motivo : 'Nenhuma'}\n\n`;
+        });
+        window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, "_blank");
+
+        allRecords.forEach(record => {
+          if (normalizeStatus(record.status) === STATUSES.FINALIZADA) {
+            remove(ref(database, `registrosFMO/${record.id}`));
+            remove(ref(database, `notificacoesFMO/${record.id}`));
+            remove(ref(database, `notificacoesPenalidades/${record.id}`));
           }
+        });
+      }
+      
+      const exportToExcel = () => {
+        if (allRecords.length === 0) return alert("Nenhum registro para exportar.");
+        const worksheet = XLSX.utils.json_to_sheet(allRecords.map(r => ({
+          Motorista: r.motorista,
+          Telefone: r.telefone,
+          FMO: r.fmo,
+          Placa: r.placa,
+          Quantidade_Sacas: r.quantidadeSacas,
+          Carga_Express: r.isExpress ? 'Sim' : 'Não',
+          DataHora: r.dataHora,
+          Doca: r.docaSelecionada || 'N/D',
+          Status: normalizeStatus(r.status),
+          Penalidade: r.penalidade ? r.penalidade.motivo : 'Nenhuma',
+          Data_Penalidade: r.penalidade ? r.penalidade.dataHora : 'N/A'
+        })));
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Registros D2D");
+        XLSX.writeFile(workbook, `Relatorio_D2D_Barueri_${new Date().toISOString().split('T')[0]}.xlsx`);
+      };
 
-          const finalizadas = Object.values(registros).filter(r => r.status === "Descarga finalizada").length;
-          const aguardando = Object.values(registros).filter(r => r.status === "Aguardando descarregamento").length;
+      function exportarPDF() {
+        if (allRecords.length === 0) return alert("Nenhum registro para exportar.");
+        
+        const countFinalizadas = allRecords.filter(r => normalizeStatus(r.status) === STATUSES.FINALIZADA).length;
+        const countAguardando = allRecords.filter(r => normalizeStatus(r.status) === STATUSES.AGUARDANDO).length;
 
-          const docDefinition = {
-            content: [
-              { text: 'Relatório Geral D2D - CDC Barueri', style: 'header' },
-              { text: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }), style: 'subheader' },
-              { text: `Descargas Finalizadas: ${finalizadas}`, style: 'summary' },
-              { text: `Aguardando Descarregamento: ${aguardando}`, style: 'summary' },
-              { text: '\n' },
-              {
-                table: {
-                  headerRows: 1,
-                  widths: ['*', '*', '*', '*', '*', '*', '*', '*'],
-                  body: [
-                    ['Motorista', 'Telefone', 'FMO', 'Placa', 'Data e Hora', 'Doca', 'Status', 'Penalidade'],
-                    ...Object.values(registros).map(r => [
-                      r.motorista || 'Não informado',
-                      r.telefone || 'Não informado',
-                      r.fmo || 'Não informado',
-                      r.placa || 'Não informada',
-                      r.dataHora || 'Não informada',
-                      r.docaSelecionada ? `Doca ${r.docaSelecionada}` : 'Não informada',
-                      r.status || statuses[0],
-                      r.penalidade ? `${r.penalidade.motivo} (${r.penalidade.dataHora})` : 'Nenhuma'
-                    ])
+        const docDefinition = {
+          content: [
+            { text: 'Relatório Geral D2D - CDC Barueri', style: 'header' },
+            { text: new Date().toLocaleString("pt-BR"), style: 'subheader' },
+            {
+              style: 'summaryTable',
+              table: {
+                widths: ['*', '*'],
+                body: [
+                  [
+                    { text: `Finalizadas: ${countFinalizadas}`, style: 'summary' },
+                    { text: `Aguardando: ${countAguardando}`, style: 'summary' }
                   ]
-                },
-                layout: {
-                  fillColor: function (rowIndex) {
-                    return (rowIndex % 2 === 0 && rowIndex > 0) ? '#f3f4f6' : null;
-                  }
-                }
-              }
-            ],
-            styles: {
-              header: { fontSize: 14, bold: true, margin: [0, 0, 0, 10] },
-              subheader: { fontSize: 12, italics: true, margin: [0, 0, 0, 20] },
-              summary: { fontSize: 12, bold: true, margin: [0, 5, 0, 5] }
+                ]
+              },
+              layout: 'noBorders'
             },
-            defaultStyle: { fontSize: 10 }
-          };
-
-          pdfMake.createPdf(docDefinition).download('Relatorio_CDC_Barueri.pdf');
-        }, { onlyOnce: true });
+            {
+              table: {
+                headerRows: 1, 
+                widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', '*'],
+                body: [
+                  ['Motorista', 'FMO', 'Placa', 'Qtde. Sacas', 'Data/Hora', 'Doca', 'Status', 'Penalidade'],
+                  ...allRecords.map(r => [
+                    r.motorista, 
+                    r.fmo, 
+                    r.placa, 
+                    `${r.quantidadeSacas}${r.isExpress ? ' (Express)' : ''}`, 
+                    r.dataHora,
+                    r.docaSelecionada ? `Doca ${r.docaSelecionada}` : 'N/D',
+                    normalizeStatus(r.status),
+                    r.penalidade ? r.penalidade.motivo : 'Nenhuma'
+                  ])
+                ]
+              },
+              layout: { fillColor: (rowIndex) => (rowIndex > 0 && rowIndex % 2 === 0) ? '#f3f4f6' : null }
+            }
+          ],
+          styles: {
+            header: { fontSize: 16, bold: true, margin: [0, 0, 0, 10], color: '#1E293B' },
+            subheader: { fontSize: 10, italics: true, margin: [0, 0, 0, 10], color: '#64748B' },
+            summary: { fontSize: 11, bold: true, color: '#334155' },
+            summaryTable: { margin: [0, 0, 0, 15] },
+          },
+          defaultStyle: { fontSize: 9 }
+        };
+        pdfMake.createPdf(docDefinition).download(`Relatorio_D2D_Barueri_${new Date().toISOString().split('T')[0]}.pdf`);
       }
 
-      btnRelatorioGeral.addEventListener('click', enviarRelatorioGeral);
-      btnExportarPDF.addEventListener('click', exportarPDF);
-      populateTable();
-
-      setInterval(checkAndClearRecords, 60000);
+      elements.btnFecharModal.addEventListener('click', closeModal);
+      elements.modal.addEventListener('click', (e) => e.target === elements.modal && closeModal());
+      elements.btnRelatorioGeral.addEventListener('click', enviarRelatorioGeral);
+      elements.btnExportarPDF.addEventListener('click', exportarPDF);
+      elements.btnExportarExcel.addEventListener('click', exportToExcel);
+      elements.fabMain.addEventListener('click', toggleFabMenu);
+      elements.searchInput.addEventListener('input', renderTable);
+      elements.tabela.addEventListener('click', handleTableClick);
+      document.querySelector('thead').addEventListener('click', handleSort);
+      
+      listenToData();
     });
   </script>
 </body>
