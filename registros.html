@@ -14,20 +14,17 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
-    
     .logo {
       max-width: 200px;
       margin: 0 auto 2rem;
       display: block;
     }
-
     .header {
       background: linear-gradient(to right, #1e3a8a, #3b82f6);
       color: white;
       padding: 1.5rem 2rem;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
-    
     .table-img {
       transition: transform 0.2s ease-in-out;
     }
@@ -47,7 +44,6 @@
     }
     .sort-asc::after { content: "\f0de"; }
     .sort-desc::after { content: "\f0dd"; }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
@@ -73,7 +69,6 @@
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 flex flex-col min-h-screen">
-
   <header class="header sticky top-0 z-40">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-20">
@@ -86,7 +81,6 @@
 
   <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <img src="./img/logo1.ico" alt="CDC Barueri Logo" class="logo">
-    
     <section id="summary" class="mb-8">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-white rounded-xl shadow-lg p-6 flex items-center gap-6 transition-transform hover:scale-105">
@@ -147,15 +141,14 @@
                 <th scope="col" class="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-center">Ações</th>
               </tr>
             </thead>
-            <tbody id="tabelaRegistros" class="bg-white divide-y divide-slate-200">
-            </tbody>
+            <tbody id="tabelaRegistros" class="bg-white divide-y divide-slate-200"></tbody>
           </table>
           <div id="noRecords" class="hidden text-center p-8 text-slate-500">Nenhum registro encontrado.</div>
         </div>
       </div>
     </section>
   </main>
-  
+
   <div id="fab-container" class="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
     <button id="btnRelatorioGeral" class="fab-menu bg-cyan-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 hover:bg-cyan-700 scale-0" title="Enviar Relatório e Limpar Finalizados">
       <i class="fas fa-share-square fa-lg"></i>
@@ -189,7 +182,7 @@
       <div id="modal-body" class="space-y-3 text-sm text-gray-700"></div>
     </div>
   </div>
-  
+
   <script type="module">
     import { database, ref, update, onValue, remove, push } from './firebase-config.js';
 
@@ -233,17 +226,17 @@
       const openModal = (record) => {
         elements.modalBody.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-user w-5 text-center mr-1"></i>Motorista:</strong> <span class="${record.penalidade ? 'text-red-600' : record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.motorista}</span></p>
-            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-phone w-5 text-center mr-1"></i>Telefone:</strong> ${record.telefone}</p>
-            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-file-alt w-5 text-center mr-1"></i>FMO:</strong> ${record.fmo}</p>
-            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-truck w-5 text-center mr-1"></i>Placa:</strong> ${record.placa}</p>
-            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-boxes w-5 text-center mr-1"></i>Quantidade de Sacas:</strong> ${record.quantidadeSacas} ${record.isExpress ? '<span class="text-purple-600">(Carga Express)</span>' : ''}</p>
-            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-clock w-5 text-center mr-1"></i>Data e Hora:</strong> ${record.dataHora}</p>
-            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-dolly-flatbed w-5 text-center mr-1"></i>Doca:</strong> ${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "Não informada"}</p>
-            <p class="sm:col-span-2"><strong class="font-medium text-slate-600 block"><i class="fas fa-map-marker-alt w-5 text-center mr-1"></i>Endereço:</strong> <span class="${record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.enderecoCompleto || "Sem endereço"}</span></p>
-            <p class="sm:col-span-2"><strong class="font-medium text-slate-600 block"><i class="fas fa-exclamation-triangle w-5 text-center mr-1"></i>Penalidade:</strong> ${record.penalidade ? `<span class="text-red-600">${record.penalidade.motivo} (${record.penalidade.dataHora})</span>` : "Nenhuma"}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-user w-5 text-center mr-1"></i>Motorista:</strong> <span class="${record.penalidade ? 'text-red-600' : record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.motorista || 'Não informado'}</span></p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-phone w-5 text-center mr-1"></i>Telefone:</strong> ${record.telefone || 'Não informado'}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-file-alt w-5 text-center mr-1"></i>FMO:</strong> ${record.fmo || 'Não informado'}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-truck w-5 text-center mr-1"></i>Placa:</strong> ${record.placa || 'Não informado'}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-boxes w-5 text-center mr-1"></i>Quantidade de Sacas:</strong> ${record.quantidadeSacas || '0'} ${record.isExpress ? '<span class="text-purple-600">(Carga Express)</span>' : ''}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-clock w-5 text-center mr-1"></i>Data e Hora:</strong> ${record.dataHora || 'Não informado'}</p>
+            <p><strong class="font-medium text-slate-600 block"><i class="fas fa-dolly-flatbed w-5 text-center mr-1"></i>Doca:</strong> ${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : 'Não atribuída'}</p>
+            <p class="sm:col-span-2"><strong class="font-medium text-slate-600 block"><i class="fas fa-map-marker-alt w-5 text-center mr-1"></i>Endereço:</strong> <span class="${record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.enderecoCompleto || 'Geolocalização não disponível'}</span></p>
+            <p class="sm:col-span-2"><strong class="font-medium text-slate-600 block"><i class="fas fa-exclamation-triangle w-5 text-center mr-1"></i>Penalidade:</strong> ${record.penalidade ? `<span class="text-red-600">${record.penalidade.motivo} (${record.penalidade.dataHora})</span>` : 'Nenhuma'}</p>
           </div>
-          <img src="${record.imagem}" alt="Foto do registro" class="mt-4 rounded-lg w-full max-w-sm mx-auto block cursor-pointer" onclick="window.open('${record.imagem}', '_blank')" />`;
+          <img src="${record.imagem || 'https://via.placeholder.com/150'}" alt="Foto do registro" class="mt-4 rounded-lg w-full max-w-sm mx-auto block cursor-pointer" onclick="window.open('${record.imagem || 'https://via.placeholder.com/150'}', '_blank')" />`;
         elements.modal.classList.remove('hidden');
       };
 
@@ -268,7 +261,7 @@
           icon.className = button.dataset.originalIcon;
         }
       };
-      
+
       const normalizeStatus = (status) => {
         if (!status) return STATUSES.AGUARDANDO;
         if (status === LEGACY_STATUSES.AGUARDANDO || status === "Aguardando descarregamento") return STATUSES.AGUARDANDO;
@@ -283,10 +276,10 @@
         const emDescarga = allRecords.filter(r => normalizeStatus(r.status) === STATUSES.EM_DESCARGA).length;
         const penalidades = allRecords.filter(r => r.penalidade && Object.keys(r.penalidade).length > 0).length;
 
-        elements.summary.finalizadas.textContent = finalizadas;
-        elements.summary.aguardando.textContent = aguardando;
-        elements.summary.emDescarga.textContent = emDescarga;
-        elements.summary.penalidades.textContent = penalidades;
+        elements.summary.finalizadas.textContent = finalizadas || 0;
+        elements.summary.aguardando.textContent = aguardando || 0;
+        elements.summary.emDescarga.textContent = emDescarga || 0;
+        elements.summary.penalidades.textContent = penalidades || 0;
 
         console.log('Contadores atualizados:', {
           finalizadas,
@@ -300,17 +293,17 @@
       const renderTable = () => {
         const searchTerm = elements.searchInput.value.toLowerCase();
         const filteredRecords = allRecords.filter(r => 
-          r.motorista.toLowerCase().includes(searchTerm) ||
-          r.placa.toLowerCase().includes(searchTerm) ||
-          r.fmo.toLowerCase().includes(searchTerm)
+          (r.motorista?.toLowerCase() || '').includes(searchTerm) ||
+          (r.placa?.toLowerCase() || '').includes(searchTerm) ||
+          (r.fmo?.toLowerCase() || '').includes(searchTerm)
         );
 
         filteredRecords.sort((a, b) => {
           const key = sortConfig.key || 'dataHora';
           const direction = sortConfig.direction || 'asc';
 
-          const valA = key === 'quantidadeSacas' ? parseInt(a[key] || 0) : a[key] || '';
-          const valB = key === 'quantidadeSacas' ? parseInt(b[key] || 0) : b[key] || '';
+          const valA = key === 'quantidadeSacas' ? parseInt(a[key] || 0) : (a[key] || '');
+          const valB = key === 'quantidadeSacas' ? parseInt(b[key] || 0) : (b[key] || '');
           
           if (valA < valB) return direction === 'asc' ? -1 : 1;
           if (valA > valB) return direction === 'asc' ? 1 : -1;
@@ -348,13 +341,13 @@
           }
 
           row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${record.penalidade ? 'text-red-600' : record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.motorista}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.fmo}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-mono">${record.placa}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.dataHora}</td>
-            <td class="px-6 py-4 whitespace-nowrap"><img src="${record.imagem}" alt="Foto" class="h-10 w-10 rounded-md object-cover cursor-pointer table-img"></td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.quantidadeSacas} ${record.isExpress ? '<span class="text-purple-600 font-medium">(Express)</span>' : ''}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : "N/D"}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${record.penalidade ? 'text-red-600' : record.enderecoCompleto === CORRECT_ADDRESS ? 'text-green-600' : 'text-blue-600'}">${record.motorista || 'Não informado'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.fmo || 'Não informado'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-mono">${record.placa || 'Não informado'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.dataHora || 'Não informado'}</td>
+            <td class="px-6 py-4 whitespace-nowrap"><img src="${record.imagem || 'https://via.placeholder.com/150'}" alt="Foto" class="h-10 w-10 rounded-md object-cover cursor-pointer table-img"></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${record.quantidadeSacas || '0'} ${record.isExpress ? '<span class="text-purple-600 font-medium">(Express)</span>' : ''}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">${record.docaSelecionada ? `Doca ${record.docaSelecionada}` : 'N/D'}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <button 
                 data-id="${record.id}" 
@@ -383,17 +376,22 @@
         });
         elements.tabela.appendChild(fragment);
       };
-      
+
       const listenToData = () => {
         onValue(ref(database, 'registrosFMO'), snapshot => {
           const data = snapshot.val() || {};
-          allRecords = Object.entries(data).map(([id, record]) => ({ 
-            id, 
-            ...record,
-            status: normalizeStatus(record.status || STATUSES.AGUARDANDO),
-            quantidadeSacas: record.quantidadeSacas || '0',
-            isExpress: record.isExpress || false
-          }));
+          allRecords = Object.entries(data).map(([id, record]) => { 
+            const quantidadeSacas = parseInt(record.quantidadeSacas || 0);
+            const isExpress = quantidadeSacas <= 100;
+            return { 
+              id, 
+              ...record,
+              status: normalizeStatus(record.status || STATUSES.AGUARDANDO),
+              quantidadeSacas: quantidadeSacas.toString(),
+              isExpress,
+              enderecoCompleto: record.enderecoCompleto || 'Geolocalização não disponível'
+            };
+          });
           updateSummary();
           renderTable();
         }, (error) => {
@@ -421,9 +419,9 @@
         if (!record.notificado) return alert("Clique em Notificar antes de alterar o status.");
         
         const notificacao = { 
-          motorista: record.motorista, 
-          fmo: record.fmo, 
-          placa: record.placa, 
+          motorista: record.motorista || 'Não informado', 
+          fmo: record.fmo || 'Não informado', 
+          placa: record.placa || 'Não informado', 
           status: newStatus, 
           dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) 
         };
@@ -448,13 +446,43 @@
         handleStatusChange(id, nextStatus, record);
       }
 
-      async function getAvailableDock() {
+      async function getAvailableDock(record) {
         return new Promise((resolve) => {
           onValue(ref(database, 'registrosFMO'), snapshot => {
-            const usedDocks = Object.values(snapshot.val() || {})
+            const data = snapshot.val() || {};
+            const records = Object.entries(data).map(([id, r]) => ({
+              id,
+              ...r,
+              status: normalizeStatus(r.status || STATUSES.AGUARDANDO),
+              quantidadeSacas: parseInt(r.quantidadeSacas || 0),
+              isExpress: parseInt(r.quantidadeSacas || 0) <= 100
+            }));
+
+            const hasExpressLoad = records.some(r => 
+              r.isExpress && 
+              normalizeStatus(r.status) !== STATUSES.FINALIZADA && 
+              r.id !== record.id
+            );
+
+            const usedDocks = records
               .filter(r => r.docaSelecionada && normalizeStatus(r.status) !== STATUSES.FINALIZADA)
               .map(r => r.docaSelecionada);
-            resolve(DOCKS.find(dock => !usedDocks.includes(dock)) || "");
+
+            let availableDocks = DOCKS.filter(dock => !usedDocks.includes(dock));
+
+            if (record.isExpress) {
+              if (!usedDocks.includes("12")) {
+                resolve("12");
+              } else {
+                alert("Doca 12 está ocupada por outra carga express. Aguarde.");
+                resolve("");
+              }
+            } else {
+              if (hasExpressLoad) {
+                availableDocks = availableDocks.filter(dock => dock !== "12");
+              }
+              resolve(availableDocks[0] || "");
+            }
           }, { onlyOnce: true });
         });
       }
@@ -466,24 +494,32 @@
             alert("Placa do veículo não informada.");
             return;
           }
-          const availableDock = await getAvailableDock();
+          const availableDock = await getAvailableDock(record);
           if (!availableDock) {
             alert("Nenhuma doca disponível. Aguarde.");
             return;
           }
 
+          const mensagem = record.isExpress 
+            ? `Carga Express: Dirija-se à Doca ${availableDock}`
+            : `Informe CDC Barueri: Dirija-se à Doca ${availableDock}`;
+
           const notificacao = { 
-            motorista: record.motorista, 
-            fmo: record.fmo, 
-            placa: record.placa, 
+            motorista: record.motorista || 'Não informado', 
+            fmo: record.fmo || 'Não informado', 
+            placa: record.placa || 'Não informado', 
             doca: availableDock, 
-            mensagem: `Informe CDC Barueri: Dirija-se à Doca ${availableDock}`, 
+            mensagem, 
             dataHora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) 
           };
           
           await Promise.all([
             push(ref(database, `notificacoesFMO/${id}`), notificacao),
-            update(ref(database, `registrosFMO/${id}`), { docaSelecionada: availableDock, notificado: true })
+            update(ref(database, `registrosFMO/${id}`), { 
+              docaSelecionada: availableDock, 
+              notificado: true,
+              isExpress: record.isExpress
+            })
           ]);
           alert("Notificação enviada para a sala de espera!");
         } catch (error) {
@@ -501,7 +537,13 @@
         setButtonLoading(button, true);
         try {
           const dataHora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-          const penalidade = { motorista: record.motorista, fmo: record.fmo, placa: record.placa, motivo, dataHora };
+          const penalidade = { 
+            motorista: record.motorista || 'Não informado', 
+            fmo: record.fmo || 'Não informado', 
+            placa: record.placa || 'Não informado', 
+            motivo, 
+            dataHora 
+          };
           
           await Promise.all([
             update(ref(database, `registrosFMO/${id}`), { penalidade: { motivo, dataHora } }),
@@ -516,7 +558,7 @@
           setButtonLoading(button, false);
         }
       }
-      
+
       const handleSort = (e) => {
         const th = e.target.closest('th.sortable');
         if (!th) return;
@@ -541,35 +583,38 @@
 
       function enviarRelatorioGeral() {
         if (allRecords.length === 0) return alert("Nenhum registro para gerar relatório.");
-        if (!confirm("Isso enviará o relatório para o WhatsApp e removerá os registros finalizados. Deseja continuar?")) return;
-
+        const confirmDelete = confirm("Isso enviará o relatório para o WhatsApp. Deseja também remover os registros finalizados do banco de dados?");
+        
         let mensagem = `📋 *Relatório Geral - CDC Barueri*\n\n`;
         allRecords.forEach((r, i) => {
-          mensagem += `🔹 *Registro ${i + 1}:*\nFMO: ${r.fmo}\nNome: ${r.motorista}\nPlaca: ${r.placa}\nQtde. Sacas: ${r.quantidadeSacas}${r.isExpress ? ' (Express)' : ''}\nHora: ${r.dataHora}\nDoca: ${r.docaSelecionada || 'N/D'}\nStatus: ${normalizeStatus(r.status)}\nPenalidade: ${r.penalidade ? r.penalidade.motivo : 'Nenhuma'}\n\n`;
+          mensagem += `🔹 *Registro ${i + 1}:*\nFMO: ${r.fmo || 'Não informado'}\nNome: ${r.motorista || 'Não informado'}\nPlaca: ${r.placa || 'Não informado'}\nQtde. Sacas: ${r.quantidadeSacas || '0'}${r.isExpress ? ' (Express)' : ''}\nHora: ${r.dataHora || 'Não informado'}\nDoca: ${r.docaSelecionada || 'N/D'}\nStatus: ${normalizeStatus(r.status)}\nEndereço: ${r.enderecoCompleto || 'Geolocalização não disponível'}\nPenalidade: ${r.penalidade ? r.penalidade.motivo : 'Nenhuma'}\n\n`;
         });
         window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, "_blank");
 
-        allRecords.forEach(record => {
-          if (normalizeStatus(record.status) === STATUSES.FINALIZADA) {
-            remove(ref(database, `registrosFMO/${record.id}`));
-            remove(ref(database, `notificacoesFMO/${record.id}`));
-            remove(ref(database, `notificacoesPenalidades/${record.id}`));
-          }
-        });
+        if (confirmDelete) {
+          allRecords.forEach(record => {
+            if (normalizeStatus(record.status) === STATUSES.FINALIZADA) {
+              remove(ref(database, `registrosFMO/${record.id}`));
+              remove(ref(database, `notificacoesFMO/${record.id}`));
+              remove(ref(database, `notificacoesPenalidades/${record.id}`));
+            }
+          });
+        }
       }
-      
+
       const exportToExcel = () => {
         if (allRecords.length === 0) return alert("Nenhum registro para exportar.");
         const worksheet = XLSX.utils.json_to_sheet(allRecords.map(r => ({
-          Motorista: r.motorista,
-          Telefone: r.telefone,
-          FMO: r.fmo,
-          Placa: r.placa,
-          Quantidade_Sacas: r.quantidadeSacas,
+          Motorista: r.motorista || 'Não informado',
+          Telefone: r.telefone || 'Não informado',
+          FMO: r.fmo || 'Não informado',
+          Placa: r.placa || 'Não informado',
+          Quantidade_Sacas: r.quantidadeSacas || '0',
           Carga_Express: r.isExpress ? 'Sim' : 'Não',
-          DataHora: r.dataHora,
+          DataHora: r.dataHora || 'Não informado',
           Doca: r.docaSelecionada || 'N/D',
           Status: normalizeStatus(r.status),
+          Endereço: r.enderecoCompleto || 'Geolocalização não disponível',
           Penalidade: r.penalidade ? r.penalidade.motivo : 'Nenhuma',
           Data_Penalidade: r.penalidade ? r.penalidade.dataHora : 'N/A'
         })));
@@ -606,16 +651,16 @@
                 headerRows: 1, 
                 widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', '*'],
                 body: [
-                  ['Motorista', 'FMO', 'Placa', 'Qtde. Sacas', 'Data/Hora', 'Doca', 'Status', 'Penalidade'],
+                  ['Motorista', 'FMO', 'Placa', 'Qtde. Sacas', 'Data/Hora', 'Doca', 'Status', 'Endereço'],
                   ...allRecords.map(r => [
-                    r.motorista, 
-                    r.fmo, 
-                    r.placa, 
-                    `${r.quantidadeSacas}${r.isExpress ? ' (Express)' : ''}`, 
-                    r.dataHora,
+                    r.motorista || 'Não informado', 
+                    r.fmo || 'Não informado', 
+                    r.placa || 'Não informado', 
+                    `${r.quantidadeSacas || '0'}${r.isExpress ? ' (Express)' : ''}`, 
+                    r.dataHora || 'Não informado',
                     r.docaSelecionada ? `Doca ${r.docaSelecionada}` : 'N/D',
                     normalizeStatus(r.status),
-                    r.penalidade ? r.penalidade.motivo : 'Nenhuma'
+                    r.enderecoCompleto || 'Geolocalização não disponível'
                   ])
                 ]
               },
