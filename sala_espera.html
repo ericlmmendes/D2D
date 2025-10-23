@@ -117,13 +117,12 @@
   </main>
 
   <script type="module">
-    import { database, ref, onValue, remove } from './firebase-config.js';
+    import { database, ref, onValue } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
       console.log("Firebase database:", database);
       console.log("Firebase ref:", ref);
       console.log("Firebase onValue:", onValue);
-      console.log("Firebase remove:", remove);
 
       const tabelaEspera = document.getElementById("tabelaEspera");
       const notificacoesDiv = document.getElementById("notificacoes");
@@ -168,7 +167,7 @@
               quantidadeSacas: parseInt(r.quantidadeSacas || 0),
               isExpress: parseInt(r.quantidadeSacas || 0) <= 100
             }))
-            .filter(r => r.status !== STATUSES.FINALIZADA)
+            .filter(r => r.status !== STATUSES.FINALIZADA) // Filtra "Finalizadas" apenas na visualização
             .sort((a, b) => new Date(a.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+)/, '$3-$2-$1 $4')) - new Date(b.dataHora.replace(/(\d+)\/(\d+)\/(\d+), (\d+:\d+)/, '$3-$2-$1 $4')));
 
           registrosArray.forEach(r => {
@@ -194,26 +193,6 @@
             cells[6].textContent = r.docaSelecionada ? `Doca ${r.docaSelecionada}` : "Não atribuída";
             if (hasPenalidade) {
               cells.forEach(cell => cell.classList.add("penalidade-aplicada"));
-            }
-          });
-
-          // Remover registros e notificações com status "Finalizadas"
-          Object.entries(registros).forEach(([id, r]) => {
-            if (normalizeStatus(r.status) === STATUSES.FINALIZADA) {
-              console.log("Removendo registro e notificações para o ID:", id);
-              Promise.all([
-                remove(ref(database, `registrosFMO/${id}`)).catch(error => {
-                  console.error(`Erro ao remover registro ${id}:`, error);
-                }),
-                remove(ref(database, `notificacoesFMO/${id}`)).catch(error => {
-                  console.error(`Erro ao remover notificaçõesFMO ${id}:`, error);
-                }),
-                remove(ref(database, `notificacoesPenalidades/${id}`)).catch(error => {
-                  console.error(`Erro ao remover notificacoesPenalidades ${id}:`, error);
-                })
-              ]).then(() => {
-                console.log(`Registro ${id} e suas notificações foram removidos com sucesso.`);
-              });
             }
           });
         }, error => {
