@@ -236,8 +236,11 @@
         <li>Nome em vermelho</li>
         <li>Descer na fila de descarregamento</li>
       </ul>
-      <div class="flex justify-end">
-        <button id="btnCloseGeolocationModal" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+      <div class="flex justify-end gap-2">
+        <button id="btnTryGeolocationAgain" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+          <i class="fas fa-redo mr-2"></i>Tentar Novamente
+        </button>
+        <button id="btnCloseGeolocationModal" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
           <i class="fas fa-times mr-2"></i>Fechar
         </button>
       </div>
@@ -299,44 +302,65 @@
       const spinnerModal = document.getElementById('spinnerModal');
       const modalGeolocationWarning = document.getElementById('modalGeolocationWarning');
       const btnCloseGeolocationModal = document.getElementById('btnCloseGeolocationModal');
+      const btnTryGeolocationAgain = document.getElementById('btnTryGeolocationAgain');
 
       let isLocationEnabled = false;
-      navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
-        isLocationEnabled = permissionStatus.state === 'granted';
-        btnTirarFoto.disabled = !isLocationEnabled;
-        if (isLocationEnabled) {
-          console.log("Geolocalização já permitida.");
-        } else {
-          console.log("Geolocalização não permitida, mostrando modal de aviso...");
-          modalGeolocationWarning.style.display = 'flex';
-          navigator.geolocation.getCurrentPosition(
-            () => {
-              isLocationEnabled = true;
-              btnTirarFoto.disabled = false;
-              modalGeolocationWarning.style.display = 'none';
-              console.log("Geolocalização permitida pelo usuário.");
-            },
-            () => {
-              isLocationEnabled = false;
-              btnTirarFoto.disabled = true;
-              console.log("Geolocalização negada ou erro.");
-            }
-          );
-        }
 
-        permissionStatus.onchange = () => {
+      // Função para verificar e atualizar o estado da geolocalização
+      function checkGeolocation() {
+        navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
           isLocationEnabled = permissionStatus.state === 'granted';
           btnTirarFoto.disabled = !isLocationEnabled;
-          modalGeolocationWarning.style.display = isLocationEnabled ? 'none' : 'flex';
-          console.log("Estado da geolocalização alterado:", permissionStatus.state);
-        };
+          console.log("Estado inicial da geolocalização:", permissionStatus.state);
+          if (!isLocationEnabled) {
+            console.log("Geolocalização não permitida, mostrando modal de aviso...");
+            modalGeolocationWarning.style.display = 'flex';
+          } else {
+            console.log("Geolocalização já permitida.");
+            modalGeolocationWarning.style.display = 'none';
+          }
+
+          permissionStatus.onchange = () => {
+            isLocationEnabled = permissionStatus.state === 'granted';
+            btnTirarFoto.disabled = !isLocationEnabled;
+            modalGeolocationWarning.style.display = isLocationEnabled ? 'none' : 'flex';
+            console.log("Estado da geolocalização alterado:", permissionStatus.state);
+          };
+        });
+      }
+
+      // Inicializar verificação da geolocalização
+      checkGeolocation();
+
+      // Botão "Tentar Novamente" para geolocalização
+      btnTryGeolocationAgain.addEventListener('click', () => {
+        console.log("Botão Tentar Novamente clicado");
+        navigator.geolocation.getCurrentPosition(
+          () => {
+            isLocationEnabled = true;
+            btnTirarFoto.disabled = false;
+            modalGeolocationWarning.style.display = 'none';
+            console.log("Geolocalização permitida pelo usuário.");
+          },
+          (err) => {
+            console.error("Erro ao tentar geolocalização novamente:", err);
+            alert("Não foi possível habilitar a geolocalização: " + err.message);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
       });
 
+      // Botão "Fechar" no modal de geolocalização
       btnCloseGeolocationModal.addEventListener('click', () => {
         console.log("Botão Fechar (modal geolocalização) clicado");
         modalGeolocationWarning.style.display = 'none';
       });
 
+      // Botão flutuante de registros
       btnRegistrosFloat.addEventListener('click', () => {
         console.log("Botão Registros (floating) clicado");
         const senha = prompt("Digite a senha de administrador para acessar os registros:");
@@ -351,11 +375,13 @@
         }
       });
 
+      // Botão Sala de Espera
       btnSalaEspera.addEventListener('click', () => {
         console.log("Botão Sala de Espera clicado");
         window.open("sala_espera.html", "_blank");
       });
 
+      // Verificar se todos os campos estão preenchidos
       function camposPreenchidos() {
         const motorista = document.getElementById("motorista").value.trim();
         const telefone = document.getElementById("telefone").value.trim();
@@ -365,6 +391,7 @@
         return motorista && telefone && fmo && placa && quantidadeSacas;
       }
 
+      // Botão Tirar Foto
       btnTirarFoto.onclick = () => {
         if (!camposPreenchidos()) {
           alert("Por favor, preencha todos os campos antes de tirar a foto.");
@@ -395,6 +422,7 @@
           });
       };
 
+      // Função para tirar foto
       function tirarFoto() {
         console.log("Tentando tirar foto...");
         if (video.videoWidth === 0 || video.videoHeight === 0) {
@@ -421,16 +449,19 @@
         modalConfirmar.style.display = 'flex';
       }
 
+      // Botão Ver Registros
       btnVerRegistros.addEventListener('click', () => {
         console.log("Tentando abrir registros.html via btnVerRegistros");
         window.open("registros.html", "_blank");
       });
 
+      // Botão Cancelar no Modal
       btnCancelarModal.addEventListener('click', () => {
         console.log("Botão Cancelar clicado");
         modalConfirmar.style.display = 'none';
       });
 
+      // Botão Confirmar no Modal
       btnConfirmarModal.addEventListener('click', async () => {
         console.log("Botão Salvar (modal) clicado");
         spinnerModal.style.display = 'inline-block';
@@ -449,14 +480,22 @@
         let latitude = '', longitude = '';
         try {
           const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            });
           });
           latitude = pos.coords.latitude.toFixed(6);
           longitude = pos.coords.longitude.toFixed(6);
           console.log("Geolocalização obtida:", { latitude, longitude });
         } catch (err) {
-          console.warn("Erro na geolocalização:", err);
-          alert("Localização não permitida. O registro será salvo sem coordenadas.");
+          console.error("Erro na geolocalização:", err);
+          alert("Erro ao obter geolocalização: " + err.message + ". Habilite a localização e tente novamente.");
+          spinnerModal.style.display = 'none';
+          btnConfirmarModal.disabled = false;
+          btnCancelarModal.disabled = false;
+          return; // Interrompe o salvamento se a geolocalização falhar
         }
 
         const imagemBase64 = canvas.toDataURL("image/png");
